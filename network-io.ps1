@@ -7,7 +7,7 @@
 
 # [ NOTE ] => 
 # - https://stackoverflow.com/a/21422517
-function DownloadFile($url, $targetFile){
+function download_file($url, $targetFile){
   $uri = New-Object "System.Uri" "$url"
   $request = [System.Net.HttpWebRequest]::Create($uri)
   $request.set_Timeout(15000)
