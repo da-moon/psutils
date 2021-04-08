@@ -2,16 +2,17 @@
 # snippet to source this script:
 #
 #   $messages_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/messages.ps1'
-#   Invoke-Expression (new-object net.webclient).downloadstring($messages_url)
+#   Invoke-Expression (New-Object net.webclient).downloadstring($messages_url)
 # ────────────────────────────────────────────────────────────────────────────────
+
 
 # [ NOTE ] => taken from
 # - https://github.com/lukesampson/scoop/blob/master/lib/core.ps1
 
-function abort($msg, [int] $exit_code=1) { write-host $msg -f red; exit $exit_code }
-function error($msg) { write-host "ERROR $msg" -f darkred }
-function warn($msg) {  write-host "WARN  $msg" -f darkyellow }
-function info($msg) {  write-host "INFO  $msg" -f darkgray }
+function abort($msg, [int] $exit_code=1) { Write-Host $msg -f red; exit $exit_code }
+function error($msg) { Write-Host "ERROR $msg" -f darkred }
+function warn($msg) {  Write-Host "WARN  $msg" -f darkyellow }
+function info($msg) {  Write-Host "INFO  $msg" -f darkgray }
 function debug($obj) {
     $prefix = "DEBUG[$(Get-Date -UFormat %s)]"
     $param = $MyInvocation.Line.Replace($MyInvocation.InvocationName, '').Trim()
@@ -37,4 +38,4 @@ function debug($obj) {
         Write-Host " -> $($MyInvocation.PSCommandPath):$($MyInvocation.ScriptLineNumber):$($MyInvocation.OffsetInLine)" -f DarkGray
     }
 }
-function success($msg) { write-host $msg -f darkgreen }
+function success($msg) { Write-Host $msg -f darkgreen }
