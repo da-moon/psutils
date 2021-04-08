@@ -1,7 +1,7 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # snippet to source this script:
 #
-#   $json_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/json.ps1'
+#   $json_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/lib/json.ps1'
 #   Invoke-Expression (New-Object net.webclient).downloadstring($json_url)
 # ────────────────────────────────────────────────────────────────────────────────
 

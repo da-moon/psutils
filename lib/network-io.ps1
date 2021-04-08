@@ -1,7 +1,7 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # snippet to source this script:
 #
-#   $network_io_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/network-io.ps1'
+#   $network_io_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/lib/network-io.ps1'
 #   Invoke-Expression (New-Object net.webclient).downloadstring($network_io_url)
 # ────────────────────────────────────────────────────────────────────────────────
 

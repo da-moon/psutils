@@ -1,7 +1,7 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # snippet to source this script:
 #
-#   $shim_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/shim.ps1'
+#   $shim_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/lib/shim.ps1'
 #   Invoke-Expression (New-Object net.webclient).downloadstring($shim_url)
 # ────────────────────────────────────────────────────────────────────────────────
 

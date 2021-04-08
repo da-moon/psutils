@@ -1,7 +1,7 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # snippet to source this script:
 #
-#   $common_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/common.ps1'
+#   $common_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/lib/common.ps1'
 #   Invoke-Expression (New-Object net.webclient).downloadstring($common_url)
 # ────────────────────────────────────────────────────────────────────────────────
 

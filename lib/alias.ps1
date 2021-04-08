@@ -1,7 +1,7 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # snippet to source this script:
 #
-#   $alias_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/alias.ps1'
+#   $alias_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/lib/alias.ps1'
 #   Invoke-Expression (New-Object net.webclient).downloadstring($alias_url)
 # ────────────────────────────────────────────────────────────────────────────────
 

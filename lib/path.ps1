@@ -1,7 +1,7 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # snippet to source this script:
 #
-#  $path_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/path.ps1'
+#  $path_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/lib/path.ps1'
 #  Invoke-Expression (New-Object net.webclient).downloadstring($path_url)
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -15,7 +15,7 @@ $library="common"
 if (Test-Path "$psscriptroot\$library.ps1" -PathType leaf){
   . "$psscriptroot\$library.ps1"
 }else{
-  $library_url = "https://raw.githubusercontent.com/da-moon/psutils/master/$library.ps1"
+  $library_url = "https://raw.githubusercontent.com/da-moon/psutils/master/lib/$library.ps1"
   Invoke-Expression (New-Object net.webclient).downloadstring($library_url)
 }
 function ensure($dir) { 

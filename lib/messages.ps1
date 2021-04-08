@@ -1,7 +1,7 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # snippet to source this script:
 #
-#   $messages_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/messages.ps1'
+#   $messages_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/lib/messages.ps1'
 #   Invoke-Expression (New-Object net.webclient).downloadstring($messages_url)
 # ────────────────────────────────────────────────────────────────────────────────
 

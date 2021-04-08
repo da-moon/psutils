@@ -1,7 +1,7 @@
 # ────────────────────────────────────────────────────────────────────────────────
 # snippet to source this script:
 #
-#   $getopt_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/getopt.ps1'
+#   $getopt_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/lib/getopt.ps1'
 #   Invoke-Expression (New-Object net.webclient).downloadstring($getopt_url)
 # ────────────────────────────────────────────────────────────────────────────────
 
