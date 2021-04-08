@@ -11,9 +11,13 @@
 # [ NOTE ] => taken from
 # - https://github.com/lukesampson/scoop/blob/master/lib/core.ps1
 
-$common_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/common.ps1'
-Invoke-Expression (New-Object net.webclient).downloadstring($common_url)
-
+$library="common"
+if (Test-Path "$psscriptroot\$library.ps1" -PathType leaf){
+  . "$psscriptroot\$library.ps1"
+}else{
+  $library_url = "https://raw.githubusercontent.com/da-moon/psutils/master/$library.ps1"
+  Invoke-Expression (New-Object net.webclient).downloadstring($library_url)
+}
 function ensure($dir) { 
   if(-not(Test-Path $dir)) { 
     $null=New-Item -ItemType Directory -Path $dir -Force -ErrorAction Stop

@@ -12,11 +12,15 @@
 # https://github.com/lukesampson/psutils/blob/master/shim.ps1
 
 
-$library_repo_root_url = "https://raw.githubusercontent.com/da-moon/psutils/master"
 $libraries = @("messages","common","path")
 foreach ($library in $libraries) {
-  $target = $library_repo_root_url + '/' + "$library" + ".ps1"
-  Invoke-Expression (New-Object net.webclient).downloadstring($target)
+  if (Test-Path "$psscriptroot\$library.ps1" -PathType leaf){
+    . "$psscriptroot\$library.ps1"
+  }else{
+    $library_repo_root_url = "https://raw.githubusercontent.com/da-moon/psutils/master"
+    $target = $library_repo_root_url + '/' + "$library" + ".ps1"
+    Invoke-Expression (New-Object net.webclient).downloadstring($target)
+  }
 }
 
 function create_shim($path) {

@@ -9,9 +9,13 @@
 # [ NOTE ] => taken from
 # - https://github.com/lukesampson/scoop/blob/master/lib/core.ps1
 
-$messages_url = 'https://raw.githubusercontent.com/da-moon/psutils/master/messages.ps1'
-Invoke-Expression (New-Object net.webclient).downloadstring($messages_url)
-
+$library="messages"
+if (Test-Path "$psscriptroot\$library.ps1" -PathType leaf){
+  . "$psscriptroot\$library.ps1"
+}else{
+  $library_url = "https://raw.githubusercontent.com/da-moon/psutils/master/$library.ps1"
+  Invoke-Expression (New-Object net.webclient).downloadstring($library_url)
+}
 function fname($path) { Split-Path $path -leaf }
 function strip_filename($path) { $path -replace [regex]::escape((fname $path)) }
 function is_directory([String] $path) {
