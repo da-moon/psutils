@@ -1,9 +1,9 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# powershell -ExecutionPolicy Bypass -File go-build.ps1
+# powershell -ExecutionPolicy Bypass -File bin\go-build.ps1
 # ────────────────────────────────────────────────────────────────────────────────
 # run the following for execution over the internet:
 #   Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-#   iwr -useb 'https://raw.githubusercontent.com/da-moon/windows-on-arm/master/go-toolchain.ps1'| iex
+#   iwr -useb 'https://raw.githubusercontent.com/da-moon/psutils/master/bin/go-toolchain.ps1'| iex
 # ────────────────────────────────────────────────────────────────────────────────
 
 param($cmd)

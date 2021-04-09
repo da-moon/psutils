@@ -1,0 +1,22 @@
+{
+  "recommendations": [
+    "karyfoundation.comment",
+    "mutantdino.resourcemonitor",
+    "streetsidesoftware.code-spell-checker",
+    "vscode-snippet.snippet",
+    "wayou.vscode-todo-highlight",
+    "wmaurer.change-case",
+    "yzane.markdown-pdf",
+    "yzhang.markdown-all-in-one",
+    "aaron-bond.better-comments",
+    "editorconfig.editorconfig",
+    "emeraldwalk.runonsave",
+    "kevinkyang.auto-comment-blocks",
+    "ms-azuretools.vscode-docker",
+    "skellock.just",
+    "tomoyukim.vscode-mermaid-editor",
+    "gruntfuggly.todo-tree",
+    "ms-vscode.powershell",
+    "ms-vscode-remote.vscode-remote-extensionpack"
+  ]
+}
