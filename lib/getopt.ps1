@@ -37,11 +37,15 @@ function getopt($argv, $shortopts, $longopts) {
             $longopt = $longopts | Where-Object { $_ -match "^$name=?$" }
 
             if($longopt) {
+            
                 if($longopt.endswith('=')) { # requires arg
                     if($i -eq $argv.length - 1) {
                         return err "Option --$name requires an argument."
                     }
-                    $opts.$name = $argv[++$i]
+                    if ($argv[$i].startswith('--')) {
+                        return err "Option --$name requires an argument."
+                    }
+                    $opts.$name = $argv[($i+1)]
                 } else {
                     $opts.$name = $true
                 }
@@ -56,6 +60,9 @@ function getopt($argv, $shortopts, $longopts) {
                     $shortopt = $matches[0]
                     if($shortopt[1] -eq ':') {
                         if($j -ne $arg.length -1 -or $i -eq $argv.length - 1) {
+                            return err "Option -$letter requires an argument."
+                        }
+                        if ($argv[($i+1)].startswith('-')) {
                             return err "Option -$letter requires an argument."
                         }
                         $opts.$letter = $argv[++$i]

@@ -63,13 +63,13 @@ foreach ($library in $libraries) {
 #
 $GOROOT = "c:\go"
 $GOPATH = $Env:USERPROFILE + "\go"
+$GO_VERSION="1.16"
 
 function go_install (){
   #
   # ─── VARIABLES ──────────────────────────────────────────────────────────────────
   #
-  $VERSION="1.16"
-  $DOWNLOAD_URL="https://github.com/thongtech/go-windows-arm/releases/download/$VERSION/go$VERSION.windows-arm.zip"
+  $DOWNLOAD_URL="https://github.com/thongtech/go-windows-arm/releases/download/$GO_VERSION/go$GO_VERSION.windows-arm.zip"
   $TMP_DIR= $Env:TEMP + "\go"
   $ZIP_FILE= $TMP_DIR + "\go.zip"
   $start_time = Get-Date
@@ -81,7 +81,7 @@ function go_install (){
   info "creating temporary directory [$TMP_DIR] to store go toolchain archive."
   $null = New-Item -ItemType Directory -Path $TMP_DIR -Force -ErrorAction Stop
   # ────────────────────────────────────────────────────────────────────────────────
-  info "Downloading go toolchain v$VERSION archive and storing it in [$ZIP_FILE]"
+  info "Downloading go toolchain v$GO_VERSION archive and storing it in [$ZIP_FILE]"
   download_file "$DOWNLOAD_URL" "$ZIP_FILE"
   # ────────────────────────────────────────────────────────────────────────────────
   if (Test-Path -Path $Env:GOROOT -PathType Container) {
@@ -200,27 +200,43 @@ if (!$cmd -and @('--help', '-h') -contains $args) {
 # [ NOTE ] =>
 # - https://github.com/lukesampson/psutils/blob/master/say.ps1
 # $opt, $args, $err = getopt $args 'hf:v:r:' @('input-file=','voice=','rate=', 'help')
-
-$opt, $_ , $err = getopt $args 'di:p:r:su' @(
+$long_flags= @(
   'development-tools',
-  'install=',
+  'install',
   'go-path=',
   'go-root=',
   'shim',
   'update'
-  )
+)
+$opt, $args , $err = getopt $args 'dip:r:su' $long_flags
 
 if ($err) { "go-toolchain : $err"; exit 1 }
+if(($cmd) -and ($cmd.startswith('--'))) {
+  $opt_cmd, $args_cmd , $err = getopt $cmd '' $long_flags
+  if ($err) { "go-toolchain : $err"; exit 1 }
+  $opt_cmd.GetEnumerator() | ForEach-Object {
+    $opt[$_.key.ToString()] =  $_.value
+    if (($_.key.ToString() -eq 'install') -and ($args_cmd)){
+      # [ TODO ] => sanitize version
+      $args = $args_cmd
+    }
+  }
+}
+[bool] $shim = $opt.s -or $opt.shim
+[bool] $update = $opt.u -or $opt.update
+[bool] $install =  $opt.i -or $opt.install
+if ($install) {
+  if ($args) {
+    $GO_VERSION=$args[0]
+  }
+}
+if ($install) {
+  info "installing go version $GO_VERSION"
+}
 
-$shim = $opt.s -or $opt.shim
-$update = $opt.u -or $opt.update
-$version = $opt.i
-if ($opt['install']) { $version = $opt['install'] }
-
-$development_tools = $opt.d -or $opt['development-tools']
-$go_path = $opt.p
-$go_path = $opt.p -or $opt['go-path']
-$go_root = $opt.r -or $opt['go-root']
+[bool] $development_tools = $opt.d -or $opt['development-tools']
+[string] $go_path = $opt.p -or $opt['go-path']
+[string] $go_root = $opt.r -or $opt['go-root']
 $opt.GetEnumerator() | ForEach-Object {
   $message = '{0}=>{1}' -f $_.key, $_.value
   Write-Host $message -f darkgreen
@@ -228,3 +244,19 @@ $opt.GetEnumerator() | ForEach-Object {
 # [ NOTE ] => Reset $erroractionpreference to original value
 $erroractionpreference = $old_erroractionpreference
 exit 0
+
+# [bool] $shim = $false
+# if ($opt['shim']) { $shim = $opt['shim'] }
+# if ($opt['s']) { $shim = $opt['s'] }
+# # ────────────────────────────────────────────────────────────────────────────────
+# [bool] $update = $false
+# if ($opt['update']) { $update = $opt['update'] }
+# if ($opt['u']) { $update = $opt['u'] }
+# # ────────────────────────────────────────────────────────────────────────────────
+# [bool] $install = $false
+# if ($opt['install']) { $install = $opt['install'] }
+# if ($opt['i']) { $install = $opt['i'] }
+# # ────────────────────────────────────────────────────────────────────────────────
+# [bool] $development_tools = $false
+# if ($opt['development-tools']) { $development_tools = $opt['development-tools'] }
+# if ($opt['d']) { $development_tools = $opt['d'] }
