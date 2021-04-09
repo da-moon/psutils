@@ -58,6 +58,9 @@ foreach ($library in $libraries) {
   }
   . $target
 }
+function get_latest_go_version() {
+  
+}
 #
 # ─── DEFAULTS ───────────────────────────────────────────────────────────────────
 #
