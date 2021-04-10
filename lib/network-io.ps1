@@ -9,6 +9,9 @@
 # - https://stackoverflow.com/a/21422517
 # [ NOTE ] => 
 # - https://stackoverflow.com/a/21422517
+function set_tls_policies(){
+  [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11, tls"
+}
 function native_download([string]$url, [string] $targetFile) {
   $dir = Split-Path -parent $targetFile
   if (-not(Test-Path -Path $dir -PathType Container)) {

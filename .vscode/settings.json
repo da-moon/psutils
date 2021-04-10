@@ -1,4 +1,6 @@
 {
+  // "files.eol": "\r\n",
+  "files.eol": "\n",
   "editor.tabSize": 2,
   "editor.formatOnType": true,
   "editor.formatOnPaste": true,

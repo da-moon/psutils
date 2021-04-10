@@ -12,14 +12,14 @@
 # https://github.com/lukesampson/psutils/blob/master/shim.ps1
 
 
-$libraries = @("messages","common","path")
+$libraries = @("messages","env","path")
 foreach ($library in $libraries) {
-  if (Test-Path "$psscriptroot\$library.ps1" -PathType leaf){
+  if (($psscriptroot) -and (Test-Path "$psscriptroot\$library.ps1" -PathType leaf)) {
     . "$psscriptroot\$library.ps1"
-  }else{
-    $library_repo_root_url = "https://raw.githubusercontent.com/da-moon/psutils/master"
-    $target = $library_repo_root_url + '/' + "$library" + ".ps1"
-    Invoke-Expression (New-Object net.webclient).downloadstring($target)
+  }
+  else {
+    $library_url = "https://raw.githubusercontent.com/da-moon/psutils/master/lib/$library.ps1"
+    Invoke-Expression (New-Object net.webclient).downloadstring($library_url)
   }
 }
 

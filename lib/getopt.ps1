@@ -7,7 +7,13 @@
 
 # [ NOTE ] =>
 # https://github.com/lukesampson/psutils/blob/master/getopt.ps1
+function debug_opt([Hashtable]$opt) {
+    $opt.GetEnumerator() | ForEach-Object {
+        $message = '{0}=>{1}' -f $_.key, $_.value
+        Write-Host $message -f darkgreen
+    }
 
+}
 function getopt($argv, $shortopts, $longopts) {
     $opts = @{}; $rem = @()
 

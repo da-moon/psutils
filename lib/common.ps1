@@ -9,11 +9,6 @@
 # [ NOTE ] => taken from
 # - https://github.com/lukesampson/scoop/blob/master/lib/core.ps1
 
-function env($name, $global, $val = '__get') {
-  $target = 'User'; if ($global) { $target = 'Machine' }
-  if ($val -eq '__get') { [environment]::getEnvironmentVariable($name, $target) }
-  else { [environment]::setEnvironmentVariable($name, $val, $target) }
-}
 function wraptext($text, $width) {
   if(!$width) { $width = $host.ui.rawui.buffersize.width };
   # be conservative: doesn't seem to print the last char
