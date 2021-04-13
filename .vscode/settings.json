@@ -12,6 +12,7 @@
   "powershell.codeFormatting.preset": "OTBS",
   "powershell.codeFormatting.alignPropertyValuePairs": true,
   "powershell.codeFormatting.ignoreOneLineBlock": true,
+  "powershell.codeFormatting.addWhitespaceAroundPipe": true,
   "files.exclude": {
     "**/.git": true,
     "**/.vagrant": true

@@ -143,6 +143,7 @@ function go_install (){
   # Expand-Archive -Path "$ZIP_FILE" -DestinationPath $go_root
   if (Test-Path -Path "$go_root\go" -PathType Container) {
     movedir "$go_root\go\*" $go_root
+    # Remove-Item "$go_root\go" -Force -Recurse -ErrorAction Stop
   }
   # ────────────────────────────────────────────────────────────────────────────────
   go_env "$go_root" "$go_path"
