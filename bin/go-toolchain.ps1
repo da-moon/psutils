@@ -128,20 +128,22 @@ function go_install (){
   [string] $TMP_DIR = $Env:TEMP + "\go"
   [string] $ZIP_FILE = $TMP_DIR + "\go.zip"
   # ────────────────────────────────────────────────────────────────────────────────
-  # recreate_dir "$TMP_DIR"  "Go toolchain temporary directory was succesfully created"
-  # info "Downloading toolchain $GO_VERSION archive and storing it in [$ZIP_FILE]"
-  # download "$download_url" "$ZIP_FILE"
-  # if ($force){
-  #   recreate_dir "$go_root" "GOROOT directory was succesfully deleted and recreated"
-  # }else{
-  #   info "ensuring GOROOT directory exists"
-  #   ensure_dir "$go_root"
-  # }
-  # info "ensuring GOPATH directory exists"
-  # ensure_dir "$go_path"
-  # info "Extracting [$ZIP_FILE] to [$go_root]"
-  # Expand-Archive -Path "$ZIP_FILE" -DestinationPath $go_root
+  recreate_dir "$TMP_DIR"  "Go toolchain temporary directory was succesfully created"
+  info "Downloading toolchain $GO_VERSION archive and storing it in [$ZIP_FILE]"
+  download "$download_url" "$ZIP_FILE"
+  if ($force){
+    recreate_dir "$go_root" "GOROOT directory was succesfully deleted and recreated"
+  }else{
+    info "ensuring GOROOT directory exists"
+    ensure_dir "$go_root"
+  }
+  info "ensuring GOPATH directory exists"
+  ensure_dir "$go_path"
+  info "Extracting [$ZIP_FILE] to [$go_root]"
+  Expand-Archive -Path "$ZIP_FILE" -DestinationPath $go_root
   if (Test-Path -Path "$go_root\go" -PathType Container) {
+    # [ TODO ] => this breaks
+    # [ TODO ] => do not use ROBOCOPY
     movedir "$go_root\go\*" $go_root
     # Remove-Item "$go_root\go" -Force -Recurse -ErrorAction Stop
   }
