@@ -111,14 +111,10 @@ RUN & { `
   Install-Module -Name powershell-yaml -Repository PSGallery -SkipPublisherCheck | Out-Null ; `
   Write-Output ('Time taken: ' + $((Get-Date).Subtract($start_time).Seconds) + ' second(s)'); `
   };
-# ────────────────────────────────────────────────────────────────────────────────
-ARG NETWORK_IO_URL="https://raw.githubusercontent.com/da-moon/psutils/master/lib/network-io.ps1"
-# ────────────────────────────────────────────────────────────────────────────────
-
 #
 # ─── INSTALLING ARIA2 ───────────────────────────────────────────────────────────
 #
-ENV ARIA2_RELEASE="1.35.0"
+ARG ARIA2_RELEASE="1.35.0"
 RUN & { `
   $script = iwr -useb 'https://raw.githubusercontent.com/da-moon/psutils/master/bin/install-aria2.ps1'; `
   Invoke-Command -ScriptBlock ([scriptblock]::Create("$script")) -ArgumentList $Env:ARIA2_RELEASE ; `
