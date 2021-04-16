@@ -1,10 +1,19 @@
 # ────────────────────────────────────────────────────────────────────────────────
-# powershell -ExecutionPolicy Bypass -File bin\go-toolchain.ps1
+# powershell -ExecutionPolicy Bypass -File bin\install-aria2.ps1
 # ────────────────────────────────────────────────────────────────────────────────
 # run the following for execution over the internet:
 #   Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
-#   iwr -useb 'https://raw.githubusercontent.com/da-moon/psutils/master/bin/go-toolchain.ps1'| iex
+#   iwr -useb 'https://raw.githubusercontent.com/da-moon/psutils/master/bin/install-aria2.ps1'| iex
 # ────────────────────────────────────────────────────────────────────────────────
+
+#
+# ─── PARAMS ─────────────────────────────────────────────────────────────────────
+#
+
+param (
+  [string] $version = "1.35.0"
+)
+
 Clear-Host
 # [ NOTE ] quit if anything goes wrong
 $old_erroractionpreference = $erroractionpreference
@@ -22,14 +31,6 @@ if (($PSVersionTable.PSVersion.Major) -lt 5) {
 if ($Env:PROCESSOR_ARCHITECTURE.ToLower() -ne 'amd64' ) {
   throw [System.ArgumentException] "this script does not support the following cpu architecture: '$Env:PROCESSOR_ARCHITECTURE'"
 }
-#
-# ─── PARAMS ─────────────────────────────────────────────────────────────────────
-#
-
-param (
-  [string] $version = "1.35.0"
-)
-
 #
 # ─── VARIABLES ──────────────────────────────────────────────────────────────────
 #
