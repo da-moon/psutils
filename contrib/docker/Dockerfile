@@ -120,23 +120,8 @@ ARG NETWORK_IO_URL="https://raw.githubusercontent.com/da-moon/psutils/master/lib
 #
 ARG ARIA2_RELEASE="1.35.0"
 RUN & { `
-  Write-Output '─────────────────────────────────────────────────────────────────' ; `
-  Write-Output ('installing aria2 ' + $Env:ARIA2_RELEASE) ;`
-  $start_time = Get-Date; `
-  if($Env:PROCESSOR_ARCHITECTURE.ToLower() -eq 'amd64' ){ `
-  $url='https://github.com/aria2/aria2/releases/download/release-' + $Env:ARIA2_RELEASE + '/aria2-' + $Env:ARIA2_RELEASE+ '-win-64bit-build1.zip'; `
-  $dir=$Env:TEMP + '\aria2'; `
-  Invoke-Expression (New-Object net.webclient).downloadstring($Env:NETWORK_IO_URL); `
-  set_tls_policies ; `
-  download $url ($dir+'\aria2.zip') ; `
-  New-Item -Type Directory -Path ($Env:ProgramData+'\Bin') -Force -ErrorAction SilentlyContinue  | Out-Null ; `
-  Expand-Archive ($dir+'\aria2.zip') -DestinationPath $dir -Force  | Out-Null ; `
-  Remove-Item -Path ($dir+'\aria2.zip') -Recurse -Force  | Out-Null ; `
-  Copy-Item ($dir + '\aria2*\aria2c.exe')  ($Env:ProgramData+ '\Bin') -Force | Out-Null ; `
-  aria2c --version | Out-Null ; `
-  Remove-Item -Path $dir -Recurse -Force | Out-Null`
-  } `
-  Write-Output ('Time taken: ' + $((Get-Date).Subtract($start_time).Seconds) + ' second(s)'); `
+  $script = iwr -useb 'https://raw.githubusercontent.com/da-moon/psutils/master/bin/install-aria2.ps1'; `
+  Invoke-Command -ScriptBlock ([scriptblock]::Create("$script $Env:ARIA2_RELEASE")); `
   };
 #
 # ─── INSTALL GIT ────────────────────────────────────────────────────────────────

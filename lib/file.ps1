@@ -29,32 +29,45 @@ function ensure_dir([string]$dir)  {
   Resolve-Path $dir
 }
 
-function movedir($from, $to) {
-  $from = $from.trimend('\')
-  $to = $to.trimend('\')
-
-  $proc = New-Object System.Diagnostics.Process
-  $proc.StartInfo.FileName = 'robocopy.exe'
-  $proc.StartInfo.Arguments = "`"$from`" `"$to`" /e /move"
-  $proc.StartInfo.RedirectStandardOutput = $true
-  $proc.StartInfo.RedirectStandardError = $true
-  $proc.StartInfo.UseShellExecute = $false
-  $proc.StartInfo.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
-  $proc.Start()
-  $out = $proc.StandardOutput.ReadToEnd()
-  $proc.WaitForExit()
-
-  if($proc.ExitCode -ge 8) {
+function movedir([string]$from,[string] $to) {
+  if ( `
+    (Get-Command "robocopy" -ErrorAction Ignore) `
+    -and  (-not($from.Contains('*'))) `
+    -and (-not($to.Contains('*')))`
+   ) {
+    $from = $from.trimend('\')
+    $to = $to.trimend('\')
+    $proc = New-Object System.Diagnostics.Process
+    $proc.StartInfo.FileName = 'robocopy.exe'
+    $proc.StartInfo.Arguments = "`"$from`" `"$to`" /e /move"
+    $proc.StartInfo.RedirectStandardOutput = $true
+    $proc.StartInfo.RedirectStandardError = $true
+    $proc.StartInfo.UseShellExecute = $false
+    $proc.StartInfo.WindowStyle = [System.Diagnostics.ProcessWindowStyle]::Hidden
+    $proc.Start()
+    $out = $proc.StandardOutput.ReadToEnd()
+    $proc.WaitForExit()
+    if ($proc.ExitCode -ge 8) {
       debug $out
       throw "Could not find '$(fname $from)'! (error $($proc.ExitCode))"
-  }
-
-  # wait for robocopy to terminate its threads
-  1..10 | ForEach-Object {
+    }
+    1..10 | ForEach-Object {
       if (Test-Path $from) {
-          Start-Sleep -Milliseconds 100
+        Start-Sleep -Milliseconds 100
       }
+    }
+    return
   }
+  Copy-Item `
+    -Path $from `
+    -Destination $to `
+    -Force `
+    -Recurse
+  Remove-Item `
+    -Path $from `
+    -Recurse `
+    -Force
+  return
 }
 # [ synopsis ] : removes the directory if it exists and
 # then recreates it
