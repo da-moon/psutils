@@ -5,11 +5,9 @@
 #   Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 #   iwr -useb 'https://raw.githubusercontent.com/da-moon/psutils/master/bin/install-aria2.ps1'| iex
 # ────────────────────────────────────────────────────────────────────────────────
-
 #
 # ─── PARAMS ─────────────────────────────────────────────────────────────────────
 #
-
 param (
   [string] $version = "1.35.0"
 )
@@ -39,9 +37,7 @@ $NETWORK_IO_URL = "https://raw.githubusercontent.com/da-moon/psutils/master/lib/
 $ZIP_FILE = $TMP_DIR + '\aria2.zip'
 $DOWNLOAD_URL = 'https://github.com/aria2/aria2/releases/download/release-' + $version + '/aria2-' + $version + '-win-64bit-build1.zip';
 # ────────────────────────────────────────────────────────────────────────────────
-
 Invoke-Expression (New-Object net.webclient).downloadstring($NETWORK_IO_URL);
-Write-Output '─────────────────────────────────────────────────────────────────' ;
 Write-Output ('installing aria2 ' + $version);
 $start_time = Get-Date;
 New-Item `
