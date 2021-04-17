@@ -46,7 +46,7 @@ New-Item `
   -Path ($Env:ProgramData + '\Bin') `
   -ErrorAction SilentlyContinue `
   -Force | Out-Null ;
-
+write-host "$DOWNLOAD_URL"
 download $DOWNLOAD_URL $ZIP_FILE ;
 Expand-Archive `
   $ZIP_FILE `
