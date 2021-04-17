@@ -47,10 +47,6 @@ New-Item `
   -ErrorAction SilentlyContinue `
   -Force | Out-Null ;
 
-Invoke-WebRequest /v2.19.1.windows.1/MinGit-2.19.1-64-bit.zip -OutFile git.zip; `
-  Expand-Archive git.zip -DestinationPath $Env:ProgramFiles\Git ; `
-  Remove-Item -Force git.zip
-
 download $DOWNLOAD_URL $ZIP_FILE ;
 Expand-Archive `
   $ZIP_FILE `
