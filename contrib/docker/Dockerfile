@@ -114,14 +114,21 @@ RUN & { `
 #
 # ─── INSTALLING ARIA2 ───────────────────────────────────────────────────────────
 #
-ARG ARIA2_RELEASE="1.35.0"
+ARG ARIA2_VERSION="1.35.0"
 RUN & { `
-  $script = iwr -useb 'https://raw.githubusercontent.com/da-moon/psutils/master/bin/install-aria2.ps1'; `
-  Invoke-Command -ScriptBlock ([scriptblock]::Create("$script")) -ArgumentList $Env:ARIA2_RELEASE ; `
+  $script = iwr -useb 'https://raw.githubusercontent.com/da-moon/psutils/master/bin/nanoserver/install-aria2.ps1'; `
+  Invoke-Command -ScriptBlock ([scriptblock]::Create("$script")) -ArgumentList $Env:ARIA2_VERSION ; `
   };
+
+
 #
 # ─── INSTALL GIT ────────────────────────────────────────────────────────────────
 #
+ENV GIT_VERSION="2.31.1"
+RUN & { `
+  $script = iwr -useb 'https://raw.githubusercontent.com/da-moon/psutils/master/bin/nanoserver/install-git.ps1'; `
+  Invoke-Command -ScriptBlock ([scriptblock]::Create("$script")) -ArgumentList $Env:GIT_VERSION ; `
+  };
 
 # ARG GIT_RELEASE="2.31.1"
 # RUN & { `
@@ -152,8 +159,16 @@ USER "ContainerAdministrator"
 # ENV HOME="C:\Users\ContainerAdministrator"
 # ENV TEMP="${HOME}\AppData\Local\Temp"
 
-USER "ContainerUser"
-WORKDIR "c:\Users\ContainerUser"
+# USER "ContainerUser"
+# WORKDIR "c:\Users\ContainerUser"
+
+# ENV 7ZIP_VERSION="1900"
+# RUN 
+# Invoke-WebRequest "http://7-zip.org/a/7z${env:7ZIP_VERSION}-x64.msi" -OutFile '7z.msi' -UseBasicParsing; `
+#   Start-Process msiexec.exe -ArgumentList '/i', '7z.msi', '/quiet', '/norestart' -NoNewWindow -Wait; `
+#   Remove-Item 7z.msi
+
+
 ENTRYPOINT ["pwsh"]
 
 # ─── ACKNOWLEDGEMENTS ───────────────────────────────────────────────────────────
