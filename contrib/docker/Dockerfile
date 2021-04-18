@@ -120,8 +120,6 @@ RUN & { `
   Invoke-Command -ScriptBlock ([scriptblock]::Create("$script")) -ArgumentList $Env:ARIA2_VERSION ; `
   aria2c --version ; `
   };
-
-
 #
 # ─── INSTALL GIT ────────────────────────────────────────────────────────────────
 #
@@ -135,15 +133,6 @@ RUN & { `
 USER "ContainerUser"
 RUN git --version;
 # ────────────────────────────────────────────────────────────────────────────────
-# ────────────────────────────────────────────────────────────────────────────────
-
-#
-# ─── INSTALLING CHOCOLATEY ──────────────────────────────────────────────────────
-#
-USER "ContainerAdministrator"
-# ENV HOME="C:\Users\ContainerAdministrator"
-# ENV TEMP="${HOME}\AppData\Local\Temp"
-
 USER "ContainerUser"
 WORKDIR "c:\Users\ContainerUser\workspace"
 ENTRYPOINT ["pwsh"]

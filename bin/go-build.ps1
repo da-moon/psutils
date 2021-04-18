@@ -91,7 +91,7 @@ Options:
 
   -s, --shim                    creates a shim for 'go-build' and adds it to path
   -u, --update                  update local copy of 'go-build' script
-  
+
   -h, --help                    shows help message
   -v, --version                 shows script version
 " -f darkgray

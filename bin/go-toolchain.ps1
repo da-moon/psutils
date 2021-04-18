@@ -102,7 +102,6 @@ function go_env () {
   $profile_lines = @(
     ('$Env:GOROOT="' + $go_root + '"'),
     ('$Env:GOPATH="' + $go_path + '"'),
-    '$Env:GO111MODULE="on"',
     '$Env:PATH="$Env:GOROOT\bin;$Env:GOPATH\bin;$Env:PATH"'
   )
   foreach ($line in $profile_lines) {
@@ -113,6 +112,9 @@ function go_env () {
     }
   }
   . $PROFILE.CurrentUserAllHosts
+  go env -w "GO111MODULE=on"
+  go env -w "CGO_ENABLED=0"
+  go env -w "CGO_LDFLAGS=-s -w -extldflags '-static'"
 }
 function go_install (){
   param(
@@ -145,7 +147,6 @@ function go_install (){
     # [ TODO ] => this breaks
     # [ TODO ] => do not use ROBOCOPY
     movedir "$go_root\go\*" $go_root
-    # Remove-Item "$go_root\go" -Force -Recurse -ErrorAction Stop
   }
   # ────────────────────────────────────────────────────────────────────────────────
   go_env "$go_root" "$go_path"
@@ -190,12 +191,9 @@ Options:
   -r GOROOT, --go-root GOROOT
     * GOROOT directory. Go toolchain is installed in this directory
     * Default is [$DEFAULT_GOROOT].
-
-  -s, --shim
-    * Creates a shim for 'go-toolchain' and adds it to path
-
-  -u, --update
-    Update local copy of 'go-toolchain' script
+  -f, --force
+    * removes existing GOROOT
+      directory.
 
   -h, --help                    shows help message
   -v, --version                 shows script version
@@ -212,11 +210,11 @@ if (-not ( $cmd -or $args)) {
   help
   exit 0
 }
-if (!$cmd -and @('--version', '-v') -contains $args) {
+if ((!$cmd -or !$args) -and @('--version', '-v') -contains ($cmd + $args)) {
   Write-Host "v0.0.1"
   exit 0
 }
-if (!$cmd -and @('--help', '-h') -contains $args) {
+if ((!$cmd -or !$args) -and @('--help', '-h') -contains ($cmd + $args)) {
   help
   exit 0
 }
@@ -231,9 +229,7 @@ $long_flags= @(
   'install',
   'force',
   'go-path=',
-  'go-root=',
-  'shim',
-  'update'
+  'go-root='
 )
 $opt, $args , $err = getopt $args 'difp:r:su' $long_flags
 
@@ -295,70 +291,46 @@ if ($install) {
 [bool] $development_tools = $opt.d -or $opt['development-tools']
 if ($development_tools) {
   if (-not (Get-Command "go" -ErrorAction Ignore) ) {
-    . $PROFILE.CurrentUserAllHosts
+    . $PROFILE.CurrentUserAllHosts ;
   }
   if (Get-Command "go" -ErrorAction Ignore)  {
-    GO111MODULE=on go get -u -v mvdan.cc/gofumpt 
-    GO111MODULE=on go get -u -v golang.org/x/tools/gopls 
-    GO111MODULE=off go get -u -v github.com/github-release/github-release 
-    GO111MODULE=off go get -u -v github.com/mdempsky/gocode 
-    GO111MODULE=off go get -u -v github.com/uudashr/gopkgs/cmd/gopkgs 
-    GO111MODULE=off go get -u -v github.com/ramya-rao-a/go-outline 
-    GO111MODULE=off go get -u -v github.com/acroca/go-symbols 
-    GO111MODULE=off go get -u -v golang.org/x/tools/cmd/guru 
-    GO111MODULE=off go get -u -v golang.org/x/tools/cmd/gorename 
-    GO111MODULE=off go get -u -v github.com/fatih/gomodifytags 
-    GO111MODULE=off go get -u -v github.com/haya14busa/goplay/cmd/goplay 
-    GO111MODULE=off go get -u -v github.com/josharian/impl 
-    GO111MODULE=off go get -u -v github.com/tylerb/gotype-live 
-    GO111MODULE=off go get -u -v github.com/rogpeppe/godef 
-    GO111MODULE=off go get -u -v github.com/zmb3/gogetdoc 
-    GO111MODULE=off go get -u -v golang.org/x/tools/cmd/goimports 
-    GO111MODULE=off go get -u -v github.com/sqs/goreturns 
-    GO111MODULE=off go get -u -v winterdrache.de/goformat/goformat 
-    GO111MODULE=off go get -u -v golang.org/x/lint/golint 
-    GO111MODULE=off go get -u -v github.com/cweill/gotests/... 
-    GO111MODULE=off go get -u -v github.com/alecthomas/gometalinter 
-    GO111MODULE=off go get -u -v honnef.co/go/tools/... 
-    GO111MODULE=off go get -u -v github.com/mgechev/revive 
-    GO111MODULE=off go get -u -v github.com/sourcegraph/go-langserver 
-    GO111MODULE=off go get -u -v github.com/go-delve/delve/cmd/dlv 
-    GO111MODULE=off go get -u -v github.com/davidrjenni/reftools/cmd/fillstruct 
-    GO111MODULE=off go get -u -v github.com/godoctor/godoctor 
-    GO111MODULE=off go get -u -v github.com/cuonglm/gocmt 
-    GO111MODULE=off go get -u -v github.com/palantir/go-compiles 
-    GO111MODULE=off go get -u -v github.com/mohae/nocomment/cmd/nocomment 
-    GO111MODULE=off go get -u -v github.com/eandre/discover/...  
-    GO111MODULE=off go get -u -v honnef.co/go/tools/cmd/staticcheck
-    go get -u -v -d github.com/stamblerre/gocode
-    go build -o  $(go env GOPATH)/bin/gocode-gomod github.com/stamblerre/gocode
-    Push-Location $(go env GOPATH)/src/honnef.co/go/tools/cmd/staticcheck
-    git checkout "$STATIC_CHECK"
-    go get
-    go install
-    Pop-Location
+    $Env:GO111MODULE = 'on'; go get -v honnef.co/go/tools/cmd/... ;
+    $Env:GO111MODULE = 'on'; go get -v mvdan.cc/gofumpt ;
+    $Env:GO111MODULE='on'; go get -v golang.org/x/tools/gopls ;
+    $Env:GO111MODULE='off'; go get -v github.com/github-release/github-release ;
+    $Env:GO111MODULE='off'; go get -v github.com/mdempsky/gocode ;
+    $Env:GO111MODULE='off'; go get -v github.com/uudashr/gopkgs/cmd/gopkgs ;
+    $Env:GO111MODULE='off'; go get -v github.com/ramya-rao-a/go-outline ;
+    $Env:GO111MODULE='off'; go get -v github.com/acroca/go-symbols ;
+    $Env:GO111MODULE='off'; go get -v golang.org/x/tools/cmd/guru ;
+    $Env:GO111MODULE='off'; go get -v golang.org/x/tools/cmd/gorename ;
+    $Env:GO111MODULE='off'; go get -v github.com/fatih/gomodifytags ;
+    $Env:GO111MODULE='off'; go get -v github.com/haya14busa/goplay/cmd/goplay ;
+    $Env:GO111MODULE='off'; go get -v github.com/josharian/impl ;
+    $Env:GO111MODULE='off'; go get -v github.com/tylerb/gotype-live ;
+    $Env:GO111MODULE='off'; go get -v github.com/rogpeppe/godef ;
+    $Env:GO111MODULE='off'; go get -v github.com/zmb3/gogetdoc ;
+    $Env:GO111MODULE='off'; go get -v golang.org/x/tools/cmd/goimports ;
+    $Env:GO111MODULE='off'; go get -v github.com/sqs/goreturns ;
+    $Env:GO111MODULE='off'; go get -v winterdrache.de/goformat/goformat ;
+    $Env:GO111MODULE='off'; go get -v golang.org/x/lint/golint ;
+    $Env:GO111MODULE='off'; go get -v github.com/cweill/gotests/... ;
+    $Env:GO111MODULE='off'; go get -v github.com/alecthomas/gometalinter ;
+    $Env:GO111MODULE='off'; go get -v honnef.co/go/tools/... ;
+    $Env:GO111MODULE='off'; go get -v github.com/mgechev/revive ;
+    $Env:GO111MODULE='off'; go get -v github.com/sourcegraph/go-langserver ;
+    $Env:GO111MODULE='off'; go get -v github.com/go-delve/delve/cmd/dlv ;
+    $Env:GO111MODULE='off'; go get -v github.com/davidrjenni/reftools/cmd/fillstruct ;
+    $Env:GO111MODULE='off'; go get -v github.com/godoctor/godoctor ;
+    $Env:GO111MODULE='off'; go get -v github.com/cuonglm/gocmt ;
+    $Env:GO111MODULE='off'; go get -v github.com/palantir/go-compiles ;
+    $Env:GO111MODULE='off'; go get -v github.com/mohae/nocomment/cmd/nocomment ;
+    $Env:GO111MODULE='off'; go get -v github.com/eandre/discover/... ;
+    $Env:GO111MODULE = 'off'; go get -v -d github.com/stamblerre/gocode ;
+    $Env:GO111MODULE = 'off';  go build -o ((go env GOPATH) + '/bin/gocode-gomod') github.com/stamblerre/gocode ;
   }
 }
-[bool] $shim = $opt.s -or $opt.shim
-[bool] $update = $opt.u -or $opt.update
 # [ NOTE ] => Reset $erroractionpreference to original value
 $erroractionpreference = $old_erroractionpreference
 success "Time taken: $((Get-Date).Subtract($start_time).Seconds) second(s)"
-
 exit 0
-
-# [bool] $shim = $false
-# if ($opt['shim']) { $shim = $opt['shim'] }
-# if ($opt['s']) { $shim = $opt['s'] }
-# # ────────────────────────────────────────────────────────────────────────────────
-# [bool] $update = $false
-# if ($opt['update']) { $update = $opt['update'] }
-# if ($opt['u']) { $update = $opt['u'] }
-# # ────────────────────────────────────────────────────────────────────────────────
-# [bool] $install = $false
-# if ($opt['install']) { $install = $opt['install'] }
-# if ($opt['i']) { $install = $opt['i'] }
-# # ────────────────────────────────────────────────────────────────────────────────
-# [bool] $development_tools = $false
-# if ($opt['development-tools']) { $development_tools = $opt['development-tools'] }
-# if ($opt['d']) { $development_tools = $opt['d'] }
