@@ -9,7 +9,8 @@
 # ─── PARAMS ─────────────────────────────────────────────────────────────────────
 #
 param (
-  [string] $version = "2.31.1"
+  [string] $git_version = "2.31.1",
+  [string] $git_patch_version = "1"
 )
 
 Clear-Host
@@ -32,37 +33,53 @@ if ($Env:PROCESSOR_ARCHITECTURE.ToLower() -ne 'amd64' ) {
 #
 # ─── VARIABLES ──────────────────────────────────────────────────────────────────
 #
-$NETWORK_IO_URL = "https://raw.githubusercontent.com/da-moon/psutils/master/lib/network-io.ps1"
-$TMP_DIR = $Env:TEMP + '\git';
-$DOWNLOAD_URL = 'https://github.com/git-for-windows/git/releases/download/v' + $version + '.windows.1/MinGit-' + $version + '-64-bit.zip';
-$ZIP_FILE = $TMP_DIR + '\git.zip'
 
+$libraries = @("common", "network-io");
+foreach ($library in $libraries) {
+  if (($psscriptroot) -and (Test-Path "$psscriptroot\$library.ps1" -PathType leaf)) {
+    . "$psscriptroot\$library.ps1";
+  } else {
+    $library_url = "https://raw.githubusercontent.com/da-moon/psutils/master/lib/$library.ps1";
+    Invoke-Expression (New-Object net.webclient).downloadstring($library_url);
+  }
+}
 # ────────────────────────────────────────────────────────────────────────────────
-Invoke-Expression (New-Object net.webclient).downloadstring($NETWORK_IO_URL);
-Write-Output ('installing git ' + $version);
+$TMP_DIR = $Env:TEMP + '\git';
+$DOWNLOAD_URL = 'https://github.com/git-for-windows/git/releases/download/v' + $git_version + '.windows.' + $git_patch_version + '/MinGit-' + $git_version + '-busybox-64-bit.zip';
+$ZIP_FILE = $TMP_DIR + '\git.zip'
+# ────────────────────────────────────────────────────────────────────────────────
+Write-Output (
+  'installing git ' + $git_version);
 $start_time = Get-Date;
+New-Item `
+  -Type Directory `
+  -Path ($Env:ProgramFiles + '\Bin') `
+  -ErrorAction SilentlyContinue `
+  -Force | Out-Null ;
+download $DOWNLOAD_URL $ZIP_FILE | Out-Null ;
+Expand-Archive `
+  $ZIP_FILE `
+  -ErrorAction SilentlyContinue `
+  -DestinationPath ($Env:ProgramFiles + '\mingit') `
+  -Force  | Out-Null ;
 New-Item `
   -Type Directory `
   -Path ($Env:ProgramData + '\Bin') `
   -ErrorAction SilentlyContinue `
   -Force | Out-Null ;
-write-host "$DOWNLOAD_URL"
-download $DOWNLOAD_URL $ZIP_FILE ;
-Expand-Archive `
-  $ZIP_FILE `
-  -DestinationPath ($Env:ProgramFiles + '\Git') `
-  -Force  | Out-Null ;
-
-$to_add = "$Env:ProgramFiles\Git\mingw64\bin";
-$path = [System.Environment]::GetEnvironmentVariable("Path", "User");
-[System.Environment]::SetEnvironmentVariable("PATH", $path + ";$to_add", "User");
-$Env:PATH = "$Env:ProgramFiles\Git\mingw64\bin;$Env:PATH"
+if (is_admin) {
+  # [ NOTE ] needs admin priviledge
+  New-Item `
+    -Itemtype SymbolicLink `
+    -Path ($Env:ProgramData + '\Bin') `
+    -name "git.exe" `
+    -Value ($Env:ProgramFiles + '\mingit\cmd\git.exe')  | Out-Null
+}else{
+  $Env:PATH = "$Env:ProgramFiles\mingit\cmd;$Env:PATH"
+}
 git --version | Out-Null ;
-
 Remove-Item -Path $TMP_DIR -Recurse -Force | Out-Null;
 Write-Output ('Time taken: ' + $((Get-Date).Subtract($start_time).Seconds) + ' second(s)');
-# ────────────────────────────────────────────────────────────────────────────────
-# [ NOTE ] => Reset $erroractionpreference to original value
+# # ────────────────────────────────────────────────────────────────────────────────
+# # [ NOTE ] => Reset $erroractionpreference to original value
 $erroractionpreference = $old_erroractionpreference
-
-# 

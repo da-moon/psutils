@@ -118,37 +118,22 @@ ARG ARIA2_VERSION="1.35.0"
 RUN & { `
   $script = iwr -useb 'https://raw.githubusercontent.com/da-moon/psutils/master/bin/nanoserver/install-aria2.ps1'; `
   Invoke-Command -ScriptBlock ([scriptblock]::Create("$script")) -ArgumentList $Env:ARIA2_VERSION ; `
+  aria2c --version ; `
   };
 
 
 #
 # ─── INSTALL GIT ────────────────────────────────────────────────────────────────
 #
+USER "ContainerAdministrator"
 ENV GIT_VERSION="2.31.1"
+ENV GIT_PATCH_VERSION="1"
 RUN & { `
   $script = iwr -useb 'https://raw.githubusercontent.com/da-moon/psutils/master/bin/nanoserver/install-git.ps1'; `
-  Invoke-Command -ScriptBlock ([scriptblock]::Create("$script")) -ArgumentList $Env:GIT_VERSION ; `
+  Invoke-Command -ScriptBlock ([scriptblock]::Create("$script")) -ArgumentList "$Env:GIT_VERSION", "$Env:GIT_PATCH_VERSION" ; `
   };
-
-# ARG GIT_RELEASE="2.31.1"
-# RUN & { `
-#   Write-Output '─────────────────────────────────────────────────────────────────' ; `
-#   Write-Output ('installing git ' + $Env:GIT_RELEASE) ;`
-#   $start_time = Get-Date; `
-#   if($Env:PROCESSOR_ARCHITECTURE.ToLower() -eq 'amd64' ){ `
-#   $url='https://github.com/git-for-windows/git/releases/download/v'+$Env:GIT_RELEASE+'.windows.1/MinGit-'+$Env:GIT_RELEASE+'-64-bit.zip';`
-#   $dir=$Env:TEMP + '\git'; `
-#   Invoke-Expression (New-Object net.webclient).downloadstring($Env:NETWORK_IO_URL); `
-#   set_tls_policies ; `
-#   download $url ($dir+'\git.zip') ; `
-#   New-Item -Type Directory -Path ($Env:ProgramData+'\Bin') -Force -ErrorAction SilentlyContinue  | Out-Null ; `
-#   Expand-Archive ($dir+'\git.zip') -DestinationPath ($Env:ProgramData+'\Bin') -Force  | Out-Null ; `
-#   Remove-Item -Path ($dir+'\git.zip') -Recurse -Force  | Out-Null ; `
-#   Remove-Item -Path $dir -Recurse -Force | Out-Null`
-#   } `
-#   Write-Output ('Time taken: ' + $((Get-Date).Subtract($start_time).Seconds) + ' second(s)'); `
-#   };
-
+USER "ContainerUser"
+RUN git --version;
 # ────────────────────────────────────────────────────────────────────────────────
 # ────────────────────────────────────────────────────────────────────────────────
 
@@ -159,16 +144,8 @@ USER "ContainerAdministrator"
 # ENV HOME="C:\Users\ContainerAdministrator"
 # ENV TEMP="${HOME}\AppData\Local\Temp"
 
-# USER "ContainerUser"
-# WORKDIR "c:\Users\ContainerUser"
-
-# ENV 7ZIP_VERSION="1900"
-# RUN 
-# Invoke-WebRequest "http://7-zip.org/a/7z${env:7ZIP_VERSION}-x64.msi" -OutFile '7z.msi' -UseBasicParsing; `
-#   Start-Process msiexec.exe -ArgumentList '/i', '7z.msi', '/quiet', '/norestart' -NoNewWindow -Wait; `
-#   Remove-Item 7z.msi
-
-
+USER "ContainerUser"
+WORKDIR "c:\Users\ContainerUser\workspace"
 ENTRYPOINT ["pwsh"]
 
 # ─── ACKNOWLEDGEMENTS ───────────────────────────────────────────────────────────
