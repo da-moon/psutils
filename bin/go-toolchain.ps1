@@ -144,8 +144,6 @@ function go_install (){
   info "Extracting [$ZIP_FILE] to [$go_root]"
   Expand-Archive -Path "$ZIP_FILE" -DestinationPath $go_root
   if (Test-Path -Path "$go_root\go" -PathType Container) {
-    # [ TODO ] => this breaks
-    # [ TODO ] => do not use ROBOCOPY
     movedir "$go_root\go\*" $go_root
   }
   # ────────────────────────────────────────────────────────────────────────────────
@@ -265,7 +263,11 @@ if ($install) {
   [string] $go_root = $Env:GOROOT
   if ($opt['go-root']) { $go_root = $opt['go-root'] }
   elseif ($opt['r']) { $go_root = $opt['r'] }
-  [string] $architecture = $Env:PROCESSOR_ARCHITECTURE.ToLower()
+  # [string] $architecture = $Env:PROCESSOR_ARCHITECTURE.ToLower()
+  [string] $architecture = reg query "HKLM\System\CurrentControlSet\Control\Session Manager\Environment" /v PROCESSOR_ARCHITECTURE | ForEach-Object { ($_ -split "\s+")[3] }
+  $architecture = $architecture.ToLower();
+  $architecture = $architecture.Trim();
+
   [string] $os="windows"
   if ($go_version.Length -eq 0) {
     $go_version = get_latest_go_version
@@ -280,7 +282,7 @@ if ($install) {
   }
   info "installing Go toolchain"
   Write-Host "
-  arch          = $($Env:PROCESSOR_ARCHITECTURE.ToLower())
+  arch          = $architecture
   version       = $go_version
   download-url  = $download_url
   GOPATH        = $go_path
