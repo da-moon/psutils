@@ -206,7 +206,7 @@ RUN & { `
   Remove-Item -Path $TMP_DIR -Recurse -Force | Out-Null; `
   Write-Output ('Time taken: ' + $(((Get-Date).Subtract($start_time)).Seconds) + ' second(s)'); `
   };
-WORKDIR "c:\Users\ContainerUser\workspace"
+WORKDIR "c:\Users\code\workspace"
 ENTRYPOINT ["pwsh"]
 
 # ─── ACKNOWLEDGEMENTS ───────────────────────────────────────────────────────────

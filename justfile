@@ -7,13 +7,13 @@ docker-push:docker-build
 	docker push fjolsvin/pwsh-windows:latest
 docker:docker-build
 	docker run \
-	--mount type=bind,source='{{justfile_directory()}}',target='c:\Users\ContainerUser\workspace' \
+	--mount type=bind,source='{{justfile_directory()}}',target='c:\Users\code\workspace' \
 	--rm \
 	-it \
 	fjolsvin/pwsh-windows
 go-toolchain: docker-build
 	docker run \
-	--mount type=bind,source='{{justfile_directory()}}',target='c:\Users\ContainerUser\workspace' \
+	--mount type=bind,source='{{justfile_directory()}}',target='c:\Users\code\workspace' \
 	--rm \
 	-it \
 	fjolsvin/pwsh-windows \
