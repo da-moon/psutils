@@ -334,5 +334,5 @@ if ($development_tools) {
 }
 # [ NOTE ] => Reset $erroractionpreference to original value
 $erroractionpreference = $old_erroractionpreference
-success "Time taken: $((Get-Date).Subtract($start_time).Seconds) second(s)"
+success "Time taken: $(((Get-Date).Subtract($start_time)).Seconds) second(s)"
 exit 0

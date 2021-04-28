@@ -1,5 +1,6 @@
 DISTRO := 'arch'
 set shell := ["powershell.exe", "-Command"]
+alias db:=docker-build
 docker-build:
 	docker build -t fjolsvin/pwsh-windows contrib\docker
 docker-push:docker-build
