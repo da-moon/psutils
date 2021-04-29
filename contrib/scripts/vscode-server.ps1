@@ -14,4 +14,4 @@ Invoke-Expression ((""{0}\bin\*\server.cmd
 --connection-secret {1}.token *> {1}.log"" -f ( $Env:USERPROFILE + ''\.vscode-server'' ) , ((Get-ChildItem ( $Env:USERPROFILE + ''\.vscode-server'' ) -Filter ''*.token'' ` -Recurse `
     | ForEach-Object { $_.FullName }) -replace ''\.[^\.]+$'' )))'.replace("`n", " ");
 ssh $ssh_host -- $kill_payload;
-Invoke-Expression (  ssh -f $ssh_host -- ('{0}' -f $start_payload)  ) | Out-Null & ;
+Invoke-Expression (  ssh -f $ssh_host -- ('{0}' -f $start_payload)  ) ;
