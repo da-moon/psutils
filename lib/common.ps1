@@ -9,23 +9,6 @@
 # [ NOTE ] => taken from
 # - https://github.com/lukesampson/scoop/blob/master/lib/core.ps1
 
-function wraptext($text, $width) {
-  if(!$width) { $width = $host.ui.rawui.buffersize.width };
-  # be conservative: doesn't seem to print the last char
-  $width -= 1 
-  $text -split '\r?\n' | ForEach-Object {
-      $line = ''
-      $_ -split ' ' | ForEach-Object {
-          if($line.length -eq 0) { $line = $_ }
-          elseif($line.length + $_.length + 1 -le $width) { $line += " $_" }
-          else { $lines += ,$line; $line = $_ }
-      }
-      $lines += ,$line
-  }
-
-  $lines -join "`n"
-}
-  
 
 # ────────────────────────────────────────────────────────────────────────────────
 function Optimize-SecurityProtocol {

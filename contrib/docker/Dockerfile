@@ -10,12 +10,8 @@
 
 
 FROM mcr.microsoft.com/powershell:nanoserver  AS powershell-installer
-
 SHELL ["pwsh", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
-
-#
 # ─── ENVIRONMENT VARIABLES ──────────────────────────────────────────────────────
-#
 ENV ProgramFiles="C:\Program Files"
 ENV ProgramData="C:\ProgramData"
 ENV PATH="C:\Windows"
@@ -23,14 +19,8 @@ ENV PATH="$PATH;C:\Windows\system32"
 ENV PATH="$PATH;$ProgramFiles\PowerShell"
 ENV PATH="$PATH;$ProgramData\Bin"
 ENV POWERSHELL_TELEMETRY_OPTOUT="1"
-# ────────────────────────────────────────────────────────────────────────────────
-ARG NETWORK_IO_URL="https://raw.githubusercontent.com/da-moon/psutils/master/lib/network-io.ps1"
-# ────────────────────────────────────────────────────────────────────────────────
-#
 # ─── DOWNLOADING POWESHELL ──────────────────────────────────────────────────────
-#
 ARG PS_VERSION=7.0.0
-ARG PS_PACKAGE_URL=https://github.com/PowerShell/PowerShell/releases/download/v$PS_VERSION/PowerShell-$PS_VERSION-win-x64.zip
 RUN & { `
   Write-Output '─────────────────────────────────────────────────────────────────' ; `
   Write-Output ('Verifying validity of given Powershell Version ' + $Env:PS_VERSION) ; `
@@ -39,8 +29,10 @@ RUN & { `
   } `
   Write-Output ('downloading powershell ' + $Env:PS_VERSION) ;`
   $start_time = Get-Date; `
-  Invoke-Expression (New-Object net.webclient).downloadstring($Env:NETWORK_IO_URL); `
+  $NETWORK_IO_URL='https://raw.githubusercontent.com/da-moon/psutils/master/lib/network-io.ps1'; `
+  Invoke-Expression (New-Object net.webclient).downloadstring($NETWORK_IO_URL); `
   set_tls_policies ; `
+  PS_PACKAGE_URL='https://github.com/PowerShell/PowerShell/releases/download/v{0}/PowerShell-{0}-win-x64.zip' -f $Env:PS_VERSION ;`
   download $Env:PS_PACKAGE_URL '/installer/powershell.zip' | Out-Null ; `
   Expand-Archive '/installer/powershell.zip' -DestinationPath '\PowerShell' ; `
   Write-Output ('Time taken: ' + $(((Get-Date).Subtract($start_time)).Seconds) + ' second(s)'); `
@@ -74,10 +66,11 @@ RUN `
 #
 # ─── USER SETUP ─────────────────────────────────────────────────────────────────
 #
+ARG user="code"
 RUN `
-  net USER code "" /ADD && `
-  net localgroup "Administrators" "code" /ADD
-USER code
+  net USER "%user%" "" /ADD && `
+  net localgroup "Administrators" "%user%" /ADD
+USER $user
 RUN `
   setx HOME "%USERPROFILE%" && `
   setx TEMP "%USERPROFILE%\AppData\Local\Temp" && `
@@ -189,7 +182,8 @@ RUN & { `
   if(!(Test-Path ($Env:ProgramData + '\ssh'))) { New-Item -Type Directory -Path ($Env:ProgramData + '\ssh') | Out-Null } ; `
   Copy-Item ($Env:ProgramFiles + '\OpenSSH-Win64\sshd_config_default') ($Env:ProgramData + '\ssh\sshd_config') ; `
   $content = Get-Content -Path ( $Env:ProgramData + '\ssh\sshd_config' ) ; `
-  $content | ForEach-Object { $_ -replace '#PermitRootLogin.*','PermitRootLogin yes' `
+  $content | ForEach-Object { $_ `
+  -replace '#PermitRootLogin.*','PermitRootLogin yes' `
   -replace '#PasswordAuthentication.*','PasswordAuthentication yes' `
   -replace '#PermitEmptyPasswords.*','PermitEmptyPasswords yes' `
   -replace '#PubkeyAuthentication.*','PubkeyAuthentication yes' `
@@ -202,10 +196,13 @@ RUN & { `
   Add-Content -Path ( $Env:ProgramData + '\ssh\sshd_config') -Value 'HostKeyAgent \\.\pipe\openssh-ssh-agent' ; `
   Add-Content -Path ( $Env:ProgramData + '\ssh\sshd_config') -Value ('Match User {0}' -f $Env:USERNAME) ; `
   New-Item -Path HKLM:\SOFTWARE -Name OpenSSH -Force | Out-Null ; `
-  New-ItemProperty -Path HKLM:\SOFTWARE\OpenSSH -Name DefaultShell -Value ( $Env:ProgramFiles + '\pwsh.exe') -PropertyType string -Force | Out-Null; `
+  Set-ItemProperty HKLM:\SOFTWARE\OpenSSH\ -Name DefaultShell -Value (Get-Command pwsh).Source -Type String -Force | Out-Null; `
+  Get-Service ssh* | Set-Service -StartupType Automatic; `
   Remove-Item -Path $TMP_DIR -Recurse -Force | Out-Null; `
   Write-Output ('Time taken: ' + $(((Get-Date).Subtract($start_time)).Seconds) + ' second(s)'); `
   };
+EXPOSE 22
+
 WORKDIR "c:\Users\code\workspace"
 ENTRYPOINT ["pwsh"]
 
