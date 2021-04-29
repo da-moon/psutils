@@ -5,17 +5,16 @@
 # ────────────────────────────────────────────────────────────────────────────────
 
 # ─── EXAMPLE RUN COMMAND ────────────────────────────────────────────────────────
-# docker run --mount type=bind,source="$(PWD)",target=c:\Users\ContainerUser\workspace  --rm -it fjolsvin/pwsh-windows
+# docker run --mount type=bind,source="$(PWD)",target=$HOMEDRIVE\Users\ContainerUser\workspace  --rm -it fjolsvin/pwsh-windows
 # ────────────────────────────────────────────────────────────────────────────────
-
 
 FROM mcr.microsoft.com/powershell:nanoserver  AS powershell-installer
 SHELL ["pwsh", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 # ─── ENVIRONMENT VARIABLES ──────────────────────────────────────────────────────
-ENV ProgramFiles="C:\Program Files"
-ENV ProgramData="C:\ProgramData"
-ENV PATH="C:\Windows"
-ENV PATH="$PATH;C:\Windows\system32"
+ENV ProgramFiles="$HOMEDRIVE\Program Files"
+ENV ProgramData="$HOMEDRIVE\ProgramData"
+ENV PATH="$HOMEDRIVE\Windows"
+ENV PATH="$PATH;$HOMEDRIVE\Windows\system32"
 ENV PATH="$PATH;$ProgramFiles\PowerShell"
 ENV PATH="$PATH;$ProgramData\Bin"
 ENV POWERSHELL_TELEMETRY_OPTOUT="1"
@@ -32,45 +31,35 @@ RUN & { `
   $NETWORK_IO_URL='https://raw.githubusercontent.com/da-moon/psutils/master/lib/network-io.ps1'; `
   Invoke-Expression (New-Object net.webclient).downloadstring($NETWORK_IO_URL); `
   set_tls_policies ; `
-  PS_PACKAGE_URL='https://github.com/PowerShell/PowerShell/releases/download/v{0}/PowerShell-{0}-win-x64.zip' -f $Env:PS_VERSION ;`
-  download $Env:PS_PACKAGE_URL '/installer/powershell.zip' | Out-Null ; `
+  $PS_PACKAGE_URL='https://github.com/PowerShell/PowerShell/releases/download/v{0}/PowerShell-{0}-win-x64.zip' -f $Env:PS_VERSION ;`
+  download $PS_PACKAGE_URL '/installer/powershell.zip' | Out-Null ; `
   Expand-Archive '/installer/powershell.zip' -DestinationPath '\PowerShell' ; `
   Write-Output ('Time taken: ' + $(((Get-Date).Subtract($start_time)).Seconds) + ' second(s)'); `
   }
-
-#
-# ──────────────────────────────────────────────────────────────────────────────────────────────────────────── I ──────────
-#   :::::: I N S T A L L   P O W E R S H E L L   I N T O   N A N O S E R V E R : :  :   :    :     :        :          :
-# ──────────────────────────────────────────────────────────────────────────────────────────────────────────────────────
-#
-FROM mcr.microsoft.com/windows/nanoserver:20H2
+# ────────────────────────────────────────────────────────────────────────────────
+# [ NOTE ] => small size, lacking some core tools
+# - VSCODE remote server doesn not work with nanoserver image 
+# FROM mcr.microsoft.com/windows/nanoserver:20H2
+FROM mcr.microsoft.com/windows/servercore:20H2
+# [ NOTE ] => too large
+# FROM mcr.microsoft.com/windows:20H2
 # ─── ENVIRONMENT VARIABLES ──────────────────────────────────────────────────────
-ENV ProgramFiles="C:\Program Files"
-ENV ProgramData="C:\ProgramData"
-ENV PATH="C:\Windows"
-ENV PATH="C:\Windows\system32;$PATH"
+ENV ProgramFiles="$HOMEDRIVE\Program Files"
+ENV ProgramData="$HOMEDRIVE\ProgramData"
+ENV PATH="$HOMEDRIVE\Windows"
+ENV PATH="$HOMEDRIVE\Windows\system32;$PATH"
 ENV PATH="$ProgramFiles\PowerShell;$PATH"
 ENV PATH="$ProgramData\Bin;$PATH"
 #  [ TODO ]
-# "$HOME\AppData\Local\bin"; 
-USER ContainerUSER
-RUN `
-  setx HOME "%USERPROFILE%" && `
-  setx TEMP "%USERPROFILE%\AppData\Local\Temp" && `
-  setx TMP "%USERPROFILE%\AppData\Local\Temp"
+# "$HOME\AppData\Local\bin";
 USER ContainerAdministrator
 RUN `
+  net localgroup administrators /add "User Manager\ContainerUser" && `
   setx HOME "%USERPROFILE%" && `
   setx TEMP "%USERPROFILE%\AppData\Local\Temp" && `
-  setx TMP "%USERPROFILE%\AppData\Local\Temp"
-#
-# ─── USER SETUP ─────────────────────────────────────────────────────────────────
-#
-ARG user="code"
-RUN `
-  net USER "%user%" "" /ADD && `
-  net localgroup "Administrators" "%user%" /ADD
-USER $user
+  setx TMP "%USERPROFILE%\AppData\Local\Temp" 
+
+USER ContainerUser
 RUN `
   setx HOME "%USERPROFILE%" && `
   setx TEMP "%USERPROFILE%\AppData\Local\Temp" && `
@@ -79,7 +68,37 @@ RUN `
 COPY --from=powershell-installer ["\\PowerShell\\", "$ProgramFiles\\PowerShell"]
 # ─── SETTING SHELL ──────────────────────────────────────────────────────────────
 SHELL ["pwsh","-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
-USER "code"
+# ─── INITIAL SETUP ──────────────────────────────────────────────────────────────
+ARG user="code"
+# ────────────────────────────────────────────────────────────────────────────────
+# ARG PASSWORD="Password~1234"
+# RUN & { `
+#   New-LocalUser -Name $Env:user -Password (ConvertTo-SecureString -AsPlainText `
+# $Env:PASSWORD -Force) -FullName $Env:user -Description "LocalAdministrator" ; `
+#   Add-LocalGroupMember -Group administrators -Member $Env:user -Verbose ; `
+#   Set-LocalUser -name $Env:user -Password ([securestring]::new()) ; `
+#   }
+# ────────────────────────────────────────────────────────────────────────────────
+RUN & { `
+  New-Item -Itemtype SymbolicLink -Path ($Env:ProgramFiles + '\PowerShell') -name "powershell.exe" -Value (Get-Command pwsh).Source ;`
+  $cfg=$Env:TEMP + '\secpol.cfg' ; `
+  secedit /export /cfg  $cfg ; `
+  ((Get-Content -Raw $cfg ) -replace 'PasswordComplexity = 1', 'PasswordComplexity = 0').trim() | Set-Content  $cfg ; `
+  secedit /configure /db c:\windows\security\local.sdb /cfg c:\secpol.cfg /areas SECURITYPOLICY ; `
+  Remove-Item -Path $cfg -Force | Out-Null; `
+  cmd /C net accounts /minpwlen:0 ; `
+  cmd /C net accounts ; `
+  cmd /C net USER $Env:user "" /ADD ; `
+  cmd /C  net localgroup administrators /add ('{0}' -f $Env:user ) `
+  # Set-ADAccountPassword -Identity 'ContainerAdministrator' -Reset -NewPassword (ConvertTo-SecureString -AsPlainText "p@ssw0rd" -Force) ;`
+  # Set-ADAccountPassword -Identity 'ContainerUser' -Reset -NewPassword (ConvertTo-SecureString -AsPlainText "p@ssw0rd" -Force) ;`
+  }
+USER $user
+RUN & { `
+  cmd /C setx HOME $Env:USERPROFILE ; `
+  cmd /C setx TEMP ($Env:USERPROFILE +'\AppData\Local\Temp') ; `
+  cmd /C setx TMP ($Env:USERPROFILE +'\AppData\Local\Temp') ; `
+  }
 # ─── INTIALIZE POWERSHELL MODULE CACHE ──────────────────────────────────────────
 ENV PSModuleAnalysisCachePath="$PUBLIC\AppData\Local\Microsoft\Windows\PowerShell\docker\ModuleAnalysisCache"
 RUN & { `
@@ -158,6 +177,7 @@ RUN & { `
   $ZIP_FILE = $TMP_DIR + '\git.zip' ; `
   $start_time = Get-Date; `
   download $DOWNLOAD_URL $ZIP_FILE | Out-Null ; `
+  if(!(Test-Path ($Env:ProgramFiles + '\mingit'))) { New-Item -Force -Type Directory -Path ($Env:ProgramFiles + '\mingit') | Out-Null } ; `
   Expand-Archive $ZIP_FILE -ErrorAction SilentlyContinue -DestinationPath ($Env:ProgramFiles + '\mingit') -Force | Out-Null ; `
   git --version | Out-Null ; `
   Remove-Item -Path $TMP_DIR -Recurse -Force | Out-Null; `
@@ -196,19 +216,25 @@ RUN & { `
   Add-Content -Path ( $Env:ProgramData + '\ssh\sshd_config') -Value 'HostKeyAgent \\.\pipe\openssh-ssh-agent' ; `
   Add-Content -Path ( $Env:ProgramData + '\ssh\sshd_config') -Value ('Match User {0}' -f $Env:USERNAME) ; `
   New-Item -Path HKLM:\SOFTWARE -Name OpenSSH -Force | Out-Null ; `
-  Set-ItemProperty HKLM:\SOFTWARE\OpenSSH\ -Name DefaultShell -Value (Get-Command pwsh).Source -Type String -Force | Out-Null; `
+  Set-ItemProperty HKLM:\SOFTWARE\OpenSSH\ -Name DefaultShell -Value (Get-Command powershell).Source -Type String -Force | Out-Null; `
   Get-Service ssh* | Set-Service -StartupType Automatic; `
   Remove-Item -Path $TMP_DIR -Recurse -Force | Out-Null; `
   Write-Output ('Time taken: ' + $(((Get-Date).Subtract($start_time)).Seconds) + ' second(s)'); `
   };
 EXPOSE 22
-
-WORKDIR "c:\Users\code\workspace"
-ENTRYPOINT ["pwsh"]
-
+EXPOSE 49000-52000
+WORKDIR "$HOMEDRIVE\Users\$user\workspace"
+# ─── ALIASES ────────────────────────────────────────────────────────────────────
+RUN & { `
+  New-Item -Path $profile -ItemType File -Force; `
+  Add-Content -Path $profile -Value 'New-Alias "gcim" "Get-CimInstance"' ; `
+  }
+ENTRYPOINT ["powershell","-NoExit", "-Command"]
+CMD ["Get-Content","-Wait", "-Path", "$Env:ProgramData\\ssh\\logs\\sshd.log"]
 # ─── ACKNOWLEDGEMENTS ───────────────────────────────────────────────────────────
 # - https://github.com/janegilring/PSCommunity/blob/master/Containers/PowerShell%20Universal%20Dashboard/NanoDemoWebsite/Dockerfile
 # - https://github.com/PowerShell/PowerShell-Docker/tree/master
 # - https://github.com/SilkyFowl/MyWindowsContainer/blob/main/ssh/NanoServer/Dockerfile
 # - https://github.com/informatique-cdc/ansible-role-win_netroute/blob/master/molecule/default/Dockerfile
+# - https://github.com/jenkinsci/docker-ssh-agent/blob/master/11/windows/nanoserver-1809/Dockerfile
 # ────────────────────────────────────────────────────────────────────────────────
