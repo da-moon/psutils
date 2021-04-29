@@ -1,0 +1,43 @@
+x-args-proto: &args-proto
+  user : "code"
+  PS_VERSION : "7.1.3"
+  ARIA2_VERSION : "1.35.0"
+  GIT_VERSION : "2.31.1"
+  GIT_PATCH_VERSION : "1"
+  OPENSSH_VERSION : "v8.1.0.0p1-Beta"
+x-build-proto: &build-proto
+  context: ../contrib/docker
+  dockerfile: Dockerfile
+version: "3"
+services:
+  pwsh-nanoserver:
+    # ─────────────────────────────────────────────────────────────────
+    # docker-compose -f build.docker-compose.yml build pwsh-nanoserver
+    # ─────────────────────────────────────────────────────────────────
+    image: fjolsvin/pwsh-nanoserver
+    build:
+      <<: *build-proto
+      args:
+        <<: *args-proto
+        IMAGE: "mcr.microsoft.com/windows/nanoserver"
+      
+  pwsh-servercore:
+    # ─────────────────────────────────────────────────────────────────
+    # docker-compose -f build.docker-compose.yml build pwsh-servercore
+    # ─────────────────────────────────────────────────────────────────
+    image: fjolsvin/pwsh-servercore
+    build:
+      <<: *build-proto
+      args:
+        <<: *args-proto
+        IMAGE: "mcr.microsoft.com/windows/servercore"
+  pwsh-windows:
+    # ─────────────────────────────────────────────────────────────────
+    # docker-compose -f build.docker-compose.yml build pwsh-windows
+    # ─────────────────────────────────────────────────────────────────
+    image: fjolsvin/pwsh-windows
+    build:
+      <<: *build-proto
+      args:
+        <<: *args-proto
+        IMAGE: "mcr.microsoft.com/windows"

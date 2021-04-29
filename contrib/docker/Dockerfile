@@ -8,6 +8,14 @@
 # docker run --mount type=bind,source="$(PWD)",target=$HOMEDRIVE\Users\ContainerUser\workspace  --rm -it fjolsvin/pwsh-windows
 # ────────────────────────────────────────────────────────────────────────────────
 
+ARG IMAGE=mcr.microsoft.com/windows/servercore
+# [ NOTE ] => small size, lacking some core tools
+# - VSCODE remote server doesn not work with nanoserver image
+# ARG IMAGE=mcr.microsoft.com/windows/nanoserver:20H2
+# [ NOTE ] => too large
+# ARG IMAGE=mcr.microsoft.com/windows:20H2
+
+
 FROM mcr.microsoft.com/powershell:nanoserver  AS powershell-installer
 SHELL ["pwsh", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 # ─── ENVIRONMENT VARIABLES ──────────────────────────────────────────────────────
@@ -37,13 +45,7 @@ RUN & { `
   Write-Output ('Time taken: ' + $(((Get-Date).Subtract($start_time)).Seconds) + ' second(s)'); `
   }
 # ────────────────────────────────────────────────────────────────────────────────
-# [ NOTE ] => small size, lacking some core tools
-# - VSCODE remote server doesn not work with nanoserver image
-# FROM mcr.microsoft.com/windows/nanoserver:20H2
-ARG IMAGE=mcr.microsoft.com/windows/servercore
-FROM $IMAGE:20H2
-# [ NOTE ] => too large
-# FROM mcr.microsoft.com/windows:20H2
+FROM ${IMAGE}:20H2
 # ─── ENVIRONMENT VARIABLES ──────────────────────────────────────────────────────
 ENV ProgramFiles="$HOMEDRIVE\Program Files"
 ENV ProgramData="$HOMEDRIVE\ProgramData"
@@ -80,17 +82,22 @@ ARG user="code"
 #   Set-LocalUser -name $Env:user -Password ([securestring]::new()) ; `
 #   }
 # ────────────────────────────────────────────────────────────────────────────────
+# [ NOTE ] removing min passwd requirements
 RUN & { `
-  New-Item -Itemtype SymbolicLink -Path ($Env:ProgramFiles + '\PowerShell') -name "powershell.exe" -Value (Get-Command pwsh).Source ;`
+  # [ NOTE ] nano server does not have secedit so we skip errors
+  $ErrorActionPreference = 'SilentlyContinue' ;`
   $cfg=$Env:TEMP + '\secpol.cfg' ; `
   secedit /export /cfg  $cfg ; `
   ((Get-Content -Raw $cfg ) -replace 'PasswordComplexity = 1', 'PasswordComplexity = 0').trim() | Set-Content  $cfg ; `
   secedit /configure /db c:\windows\security\local.sdb /cfg c:\secpol.cfg /areas SECURITYPOLICY ; `
   Remove-Item -Path $cfg -Force | Out-Null; `
+  }
+RUN & { `
+  New-Item -Itemtype SymbolicLink -Path ($Env:ProgramFiles + '\PowerShell') -name "powershell.exe" -Value (Get-Command pwsh).Source ;`
   cmd /C net accounts /minpwlen:0 ; `
   cmd /C net accounts ; `
   cmd /C net USER $Env:user "" /ADD ; `
-  cmd /C  net localgroup administrators /add ('{0}' -f $Env:user ) `
+  cmd /C net localgroup administrators /add ('{0}' -f $Env:user ) `
   # Set-ADAccountPassword -Identity 'ContainerAdministrator' -Reset -NewPassword (ConvertTo-SecureString -AsPlainText "p@ssw0rd" -Force) ;`
   # Set-ADAccountPassword -Identity 'ContainerUser' -Reset -NewPassword (ConvertTo-SecureString -AsPlainText "p@ssw0rd" -Force) ;`
   }
