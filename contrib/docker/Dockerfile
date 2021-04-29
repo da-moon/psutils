@@ -38,9 +38,10 @@ RUN & { `
   }
 # ────────────────────────────────────────────────────────────────────────────────
 # [ NOTE ] => small size, lacking some core tools
-# - VSCODE remote server doesn not work with nanoserver image 
+# - VSCODE remote server doesn not work with nanoserver image
 # FROM mcr.microsoft.com/windows/nanoserver:20H2
-FROM mcr.microsoft.com/windows/servercore:20H2
+ARG IMAGE=mcr.microsoft.com/windows/servercore
+FROM $IMAGE:20H2
 # [ NOTE ] => too large
 # FROM mcr.microsoft.com/windows:20H2
 # ─── ENVIRONMENT VARIABLES ──────────────────────────────────────────────────────
