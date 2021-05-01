@@ -212,6 +212,7 @@ RUN & { `
   $content = Get-Content -Path ( $Env:ProgramData + '\ssh\sshd_config' ) ; `
   $content | ForEach-Object { $_ `
   -replace '#PermitRootLogin.*','PermitRootLogin yes' `
+  -replace '#AllowTcpForwarding.*','AllowTcpForwarding yes' `
   -replace '#PasswordAuthentication.*','PasswordAuthentication yes' `
   -replace '#PermitEmptyPasswords.*','PermitEmptyPasswords yes' `
   -replace '#PubkeyAuthentication.*','PubkeyAuthentication yes' `
