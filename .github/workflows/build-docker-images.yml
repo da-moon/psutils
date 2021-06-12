@@ -20,7 +20,7 @@ jobs:
     runs-on: windows-latest
     steps:
       - name: "docker path"
-        run: "Get-Command docker | Select-Object -first 1"
+        run: "Get-Command docker"
       - name: "use windows containers engine"
         run: |
           & ( '{0}\Docker\Docker\DockerCli.exe' -f $Env:ProgramFiles ) -SwitchWindowsEngine
