@@ -18,7 +18,10 @@ jobs:
     steps:
       - name: "docker path"
         run: | 
-          Get-ChildItem env:*
+          Get-ChildItem env:* ;
+          ls ( '{0}' -f $Env:ProgramFiles ) ;
+          ls ( '{0}\Docker' -f $Env:ProgramFiles ) ;
+          ls ( '{0}\Docker\Docker' -f $Env:ProgramFiles ) ;
       - name: "use windows containers engine"
         run: |
           & ( '{0}\Docker\Docker\DockerCli.exe' -f $Env:ProgramFiles ) -SwitchWindowsEngine
