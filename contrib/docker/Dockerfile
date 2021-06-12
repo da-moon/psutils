@@ -59,15 +59,15 @@ ENV PATH="$ProgramData\Bin;$PATH"
 # "$HOME\AppData\Local\bin";
 USER ContainerAdministrator
 RUN net localgroup administrators /add "User Manager\ContainerUser" || exit 0 `
-  setx HOME "%USERPROFILE%"|| exit 0 `
+  setx HOME "%USERPROFILE%" || exit 0 `
   setx TEMP "%USERPROFILE%\AppData\Local\Temp" || exit 0 `
-  setx TMP "%USERPROFILE%\AppData\Local\Temp"|| exit 0
+  setx TMP "%USERPROFILE%\AppData\Local\Temp" || exit 0
 
 USER ContainerUser
 RUN `
-  setx HOME "%USERPROFILE%" && `
-  setx TEMP "%USERPROFILE%\AppData\Local\Temp" && `
-  setx TMP "%USERPROFILE%\AppData\Local\Temp"
+  setx HOME "%USERPROFILE%" || exit 0 `
+  setx TEMP "%USERPROFILE%\AppData\Local\Temp" || exit 0 `
+  setx TMP "%USERPROFILE%\AppData\Local\Temp"  || exit 0 
 # ─── COPY POWERSHELL CORE FROM THE INSTALLER CONTAINER ──────────────────────────
 COPY --from=powershell-installer ["\\PowerShell\\", "$ProgramFiles\\PowerShell"]
 # ─── SETTING SHELL ──────────────────────────────────────────────────────────────
