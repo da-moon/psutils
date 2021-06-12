@@ -19,6 +19,8 @@ jobs:
     name: "build and push nanoserver docker image"
     runs-on: windows-latest
     steps:
+      - name: "docker path"
+        run: "Get-Command docker | Select-Object -first 1"
       - name: "use windows containers engine"
         run: |
           & ( '{0}\Docker\Docker\DockerCli.exe' -f $Env:ProgramFiles ) -SwitchWindowsEngine
