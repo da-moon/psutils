@@ -1,4 +1,5 @@
 # escape=`
+#syntax=docker/dockerfile:1.2
 
 # ─── EXAMPLE BUILD COMMAND ──────────────────────────────────────────────────────
 # docker build -t fjolsvin/pwsh-windows contrib\docker
@@ -9,6 +10,7 @@
 # ────────────────────────────────────────────────────────────────────────────────
 
 ARG IMAGE=mcr.microsoft.com/windows/servercore
+ARG TAG="20H2"
 # [ NOTE ] => small size, lacking some core tools
 # - VSCODE remote server doesn not work with nanoserver image
 # ARG IMAGE=mcr.microsoft.com/windows/nanoserver:20H2
@@ -45,7 +47,7 @@ RUN & { `
   Write-Output ('Time taken: ' + $(((Get-Date).Subtract($start_time)).Seconds) + ' second(s)'); `
   }
 # ────────────────────────────────────────────────────────────────────────────────
-FROM ${IMAGE}:20H2
+FROM ${IMAGE}:${TAG}
 # ─── ENVIRONMENT VARIABLES ──────────────────────────────────────────────────────
 ENV ProgramFiles="$HOMEDRIVE\Program Files"
 ENV ProgramData="$HOMEDRIVE\ProgramData"
