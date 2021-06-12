@@ -1,6 +1,8 @@
-set shell := ["powershell.exe", "-Command"]
+set shell := [
+  "powershell.exe",
+   "-Command",
+   "$Env:DOCKER_BUILDKIT = '0';"]
 # ─── VARIABLES ──────────────────────────────────────────────────────────────────
-export DOCKER_BUILDKIT := "0"
 user := "code"
 # ─── DOCKER ─────────────────────────────────────────────────────────────────────
 alias ds:=docker-stop
@@ -9,14 +11,13 @@ docker-stop:
 # ────────────────────────────────────────────────────────────────────────────────
 alias dbn:=docker-build-nanoserver
 docker-build-nanoserver:
-  docker-compose -f '{{justfile_directory()}}\.github\docker-compose.yml' build --build-arg "user={{user}}" pwsh-nanoserver
+  docker-compose -f '{{justfile_directory()}}\.github\docker-compose.yml' build --build-arg "user={{user}}" pwsh-nanoserver ;
 alias dbs:=docker-build-servercore
 docker-build-servercore:
   docker-compose -f '{{justfile_directory()}}\.github\docker-compose.yml' build --build-arg "user={{user}}" pwsh-servercore
 alias dbw:=docker-build-windows
 docker-build-windows:
   docker-compose -f '{{justfile_directory()}}\.github\docker-compose.yml' build --build-arg "user={{user}}" pwsh-windows
-
 # docker build --build-arg "user={{user}}" -t fjolsvin/pwsh-windows contrib\docker
 alias db:=docker-build
 docker-build:

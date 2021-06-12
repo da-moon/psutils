@@ -58,10 +58,10 @@ ENV PATH="$ProgramData\Bin;$PATH"
 #  [ TODO ]
 # "$HOME\AppData\Local\bin";
 USER ContainerAdministrator
-RUN net localgroup administrators /add "User Manager\ContainerUser" && exit 0
-RUN setx HOME "%USERPROFILE%" && exit 0
-RUN setx TEMP "%USERPROFILE%\AppData\Local\Temp" && exit 0
-RUN setx TMP "%USERPROFILE%\AppData\Local\Temp" && exit 0
+RUN net localgroup administrators /add "User Manager\ContainerUser" || exit 0 `
+  setx HOME "%USERPROFILE%"|| exit 0 `
+  setx TEMP "%USERPROFILE%\AppData\Local\Temp" || exit 0 `
+  setx TMP "%USERPROFILE%\AppData\Local\Temp"|| exit 0
 
 USER ContainerUser
 RUN `
