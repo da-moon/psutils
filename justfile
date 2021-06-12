@@ -6,12 +6,34 @@ alias ds:=docker-stop
 docker-stop:
   Invoke-Expression ("docker stop {0}" -f ([uri]"{{justfile_directory()}}").segments[-1].trim('/')) -ErrorAction SilentlyContinue  2>&1 | Out-Null
 # ────────────────────────────────────────────────────────────────────────────────
+alias dbn:=docker-build-nanoserver
+docker-build-nanoserver:
+  docker-compose -f '{{justfile_directory()}}\.github\build.docker-compose.yml' build --build-arg "user={{user}}" pwsh-nanoserver
+alias dbs:=docker-build-servercore
+docker-build-servercore:
+  docker-compose -f '{{justfile_directory()}}\.github\build.docker-compose.yml' build --build-arg "user={{user}}" pwsh-servercore
+alias dbw:=docker-build-windows
+docker-build-windows:
+  docker-compose -f '{{justfile_directory()}}\.github\build.docker-compose.yml' build --build-arg "user={{user}}" pwsh-windows
+
 # docker build --build-arg "user={{user}}" -t fjolsvin/pwsh-windows contrib\docker
 alias db:=docker-build
 docker-build:
   docker-compose -f '{{justfile_directory()}}\.github\build.docker-compose.yml' build --build-arg "user={{user}}" --parallel
 # ────────────────────────────────────────────────────────────────────────────────
 # docker push fjolsvin/pwsh-windows:latest
+alias dpn:=docker-push-nanoserver
+docker-push-nanoserver:
+  docker-compose -f '{{justfile_directory()}}\.github\build.docker-compose.yml' push pwsh-servercore-nanoserver
+
+alias dps:=docker-push-servercore
+docker-push-servercore:
+  docker-compose -f '{{justfile_directory()}}\.github\build.docker-compose.yml' push pwsh-servercore
+
+alias dpw:=docker-push-windows
+docker-push-windows:
+  docker-compose -f '{{justfile_directory()}}\.github\build.docker-compose.yml' push pwsh-windows
+
 alias dp:=docker-push
 docker-push:
   docker-compose -f '{{justfile_directory()}}\.github\build.docker-compose.yml' push
