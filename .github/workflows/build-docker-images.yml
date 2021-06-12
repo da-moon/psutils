@@ -19,12 +19,10 @@ jobs:
       - name: "docker path"
         run: | 
           docker info
-#       - name: "use windows containers engine"
-#         run: |
-#           & ( '{0}\Docker\Docker\DockerCli.exe' -f $Env:ProgramFiles ) -SwitchWindowsEngine
+# docker pull mcr.microsoft.com/windows/nanoserver:20H2
       - name: "pull image"
         run: >
-          docker pull mcr.microsoft.com/windows/nanoserver:20H2
+          docker pull mcr.microsoft.com/windows/nanoserver:1809
       - name: Check out the repo
         uses: actions/checkout@v2
       - name: "build docker image"
