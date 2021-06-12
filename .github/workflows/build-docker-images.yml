@@ -10,8 +10,6 @@ on:
       - "lib/*.ps1"
   workflow_dispatch:
 
-# servercore
-# windows
 jobs:
   nanoserver:
     name: "build and push nanoserver docker image"
@@ -39,3 +37,55 @@ jobs:
           -f .github/build.docker-compose.yml
           push
           pwsh-nanoserver
+  servercore:
+    name: "build and push servercore docker image"
+    runs-on: windows-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: "Login to Docker Hub"
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: "build docker image"
+        env:
+          USER: code
+        run: >
+          docker-compose 
+          -f .github/build.docker-compose.yml
+          build 
+          --build-arg "user=$Env:USER"
+          pwsh-servercore
+      - name: "push docker image"
+        run: >
+          docker-compose
+          -f .github/build.docker-compose.yml
+          push
+          pwsh-servercore
+  windows:
+    name: "build and push windows docker image"
+    runs-on: windows-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: "Login to Docker Hub"
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: "build docker image"
+        env:
+          USER: code
+        run: >
+          docker-compose 
+          -f .github/build.docker-compose.yml
+          build 
+          --build-arg "user=$Env:USER"
+          pwsh-windows
+      - name: "push docker image"
+        run: >
+          docker-compose
+          -f .github/build.docker-compose.yml
+          push
+          pwsh-windows
