@@ -27,14 +27,10 @@ jobs:
       - name: "build docker image"
         env:
           USER: code
-          DOCKER_BUILDKIT: 1
-          COMPOSE_DOCKER_CLI_BUILD: 1
-          BUILDKIT_PROGRESS: "plain"
         run: >
           docker-compose 
           -f .github/build.docker-compose.yml
           build 
-          --build-arg "BUILDKIT_INLINE_CACHE=1" 
           --build-arg "user=$Env:USER"
           pwsh-nanoserver
       - name: "push docker image"
