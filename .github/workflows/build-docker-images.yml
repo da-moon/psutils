@@ -11,6 +11,9 @@ on:
   workflow_dispatch:
 env:
   DOCKER_BUILDKIT: 0
+defaults:
+  run:
+    working-directory: .github
 jobs:
   nanoserver:
     name: "build and push nanoserver docker image"
@@ -28,14 +31,12 @@ jobs:
           USER: code
         run: >
           docker-compose 
-          -f .github/docker-compose.yml
           build 
           --build-arg "user=$Env:USER"
           pwsh-nanoserver
       - name: "push docker image"
         run: >
           docker-compose
-          -f .github/docker-compose.yml
           push
           pwsh-nanoserver
   servercore:
@@ -54,14 +55,12 @@ jobs:
           USER: code
         run: >
           docker-compose 
-          -f .github/docker-compose.yml
           build 
           --build-arg "user=$Env:USER"
           pwsh-servercore
       - name: "push docker image"
         run: >
           docker-compose
-          -f .github/docker-compose.yml
           push
           pwsh-servercore
   windows:
@@ -80,13 +79,11 @@ jobs:
           USER: code
         run: >
           docker-compose 
-          -f .github/docker-compose.yml
           build 
           --build-arg "user=$Env:USER"
           pwsh-windows
       - name: "push docker image"
         run: >
           docker-compose
-          -f .github/docker-compose.yml
           push
           pwsh-windows

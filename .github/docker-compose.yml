@@ -12,7 +12,7 @@ version: "3"
 services:
   pwsh-nanoserver:
     # ─────────────────────────────────────────────────────────────────
-    # docker-compose -f build.docker-compose.yml build pwsh-nanoserver
+    # docker-compose -f docker-compose.yml build pwsh-nanoserver
     # ─────────────────────────────────────────────────────────────────
     image: fjolsvin/pwsh-nanoserver
     build:
@@ -23,7 +23,7 @@ services:
       
   pwsh-servercore:
     # ─────────────────────────────────────────────────────────────────
-    # docker-compose -f build.docker-compose.yml build pwsh-servercore
+    # docker-compose -f docker-compose.yml build pwsh-servercore
     # ─────────────────────────────────────────────────────────────────
     image: fjolsvin/pwsh-servercore
     build:
@@ -33,7 +33,7 @@ services:
         IMAGE: "mcr.microsoft.com/windows/servercore"
   pwsh-windows:
     # ─────────────────────────────────────────────────────────────────
-    # docker-compose -f build.docker-compose.yml build pwsh-windows
+    # docker-compose -f docker-compose.yml build pwsh-windows
     # ─────────────────────────────────────────────────────────────────
     image: fjolsvin/pwsh-windows
     build:
