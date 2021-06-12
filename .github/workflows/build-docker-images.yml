@@ -15,14 +15,13 @@ jobs:
   nanoserver:
     name: "build and push nanoserver docker image"
     runs-on: windows-latest
-#           Get-ChildItem env:* ;
     steps:
       - name: "docker path"
         run: | 
-          Get-ChildItem ( '{0}\Docker' -f $Env:ProgramFiles ) 
-      - name: "use windows containers engine"
-        run: |
-          & ( '{0}\Docker\Docker\DockerCli.exe' -f $Env:ProgramFiles ) -SwitchWindowsEngine
+          docker info
+#       - name: "use windows containers engine"
+#         run: |
+#           & ( '{0}\Docker\Docker\DockerCli.exe' -f $Env:ProgramFiles ) -SwitchWindowsEngine
       - name: "pull image"
         run: >
           docker pull mcr.microsoft.com/windows/nanoserver:20H2
