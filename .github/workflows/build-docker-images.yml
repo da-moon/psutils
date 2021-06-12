@@ -11,9 +11,6 @@ on:
   workflow_dispatch:
 env:
   DOCKER_BUILDKIT: 0
-defaults:
-  run:
-    working-directory: .github
 jobs:
   nanoserver:
     name: "build and push nanoserver docker image"
@@ -33,6 +30,7 @@ jobs:
       - name: "build docker image"
         env:
           USER: code
+        working-directory: .github
         run: >
           docker-compose 
           build 
@@ -44,6 +42,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: "push docker image"
+        working-directory: .github
         run: >
           docker-compose
           push
@@ -63,6 +62,7 @@ jobs:
       - name: "build docker image"
         env:
           USER: code
+        working-directory: .github
         run: >
           docker-compose 
           build 
@@ -74,6 +74,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: "push docker image"
+        working-directory: .github
         run: >
           docker-compose
           push
@@ -93,6 +94,7 @@ jobs:
       - name: "build docker image"
         env:
           USER: code
+        working-directory: .github
         run: >
           docker-compose 
           build 
@@ -104,6 +106,7 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
       - name: "push docker image"
+        working-directory: .github
         run: >
           docker-compose
           push
