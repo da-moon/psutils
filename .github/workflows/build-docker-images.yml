@@ -1,0 +1,43 @@
+name: "build-docker-images"
+on:
+  push:
+    paths:
+      - ".github/workflows/build-docker-images.yml"
+      - ".github/build.docker-compose.yml"
+      - "contrib/docker/Dockerfile"
+      - "lib/*.ps1"
+  workflow_dispatch:
+
+# servercore
+# windows
+jobs:
+  nanoserver:
+    name: "build and push nanoserver docker image"
+    runs-on: windows-latest
+    steps:
+      - name: Check out the repo
+        uses: actions/checkout@v2
+      - name: "Login to Docker Container Repository"
+        run: echo ${DOCKER_PASSWORD} | docker login -u ${DOCKER_USERNAME} --password-stdin
+        env:
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+      - name: "build docker image"
+        env:
+          USER: code
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
+          BUILDKIT_PROGRESS: "plain"
+        run: >
+          docker-compose 
+          -f .github/build.docker-compose.yml
+          build 
+          --build-arg "BUILDKIT_INLINE_CACHE=1" 
+          --build-arg "user=$Env:USER"
+          pwsh-nanoserver
+      - name: "push docker image"
+        run: >
+          docker-compose
+          -f .github/build.docker-compose.yml
+          push
+          pwsh-nanoserver
