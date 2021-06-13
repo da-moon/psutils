@@ -70,9 +70,10 @@ RUN `
   setx TMP "%USERPROFILE%\AppData\Local\Temp"  || exit 0 
 # ─── COPY POWERSHELL CORE FROM THE INSTALLER CONTAINER ──────────────────────────
 COPY --from=powershell-installer ["\\PowerShell\\", "$ProgramFiles\\PowerShell"]
+# ─── INITIAL SETUP ──────────────────────────────────────────────────────────────
+USER ContainerAdministrator
 # ─── SETTING SHELL ──────────────────────────────────────────────────────────────
 SHELL ["pwsh","-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
-# ─── INITIAL SETUP ──────────────────────────────────────────────────────────────
 ARG user="code"
 # ────────────────────────────────────────────────────────────────────────────────
 # ARG PASSWORD="Password~1234"

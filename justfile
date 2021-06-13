@@ -1,7 +1,8 @@
 set shell := [
   "powershell.exe",
    "-Command",
-   "$Env:DOCKER_BUILDKIT = '0';"]
+   "$Env:DOCKER_BUILDKIT = '0';"
+]
 # ─── VARIABLES ──────────────────────────────────────────────────────────────────
 user := "code"
 # ─── DOCKER ─────────────────────────────────────────────────────────────────────
