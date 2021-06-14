@@ -17,7 +17,6 @@ ARG TAG="20H2"
 # [ NOTE ] => too large
 # ARG IMAGE=mcr.microsoft.com/windows:20H2
 
-
 FROM mcr.microsoft.com/powershell:nanoserver  AS powershell-installer
 SHELL ["pwsh", "-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 # ─── ENVIRONMENT VARIABLES ──────────────────────────────────────────────────────
@@ -68,10 +67,10 @@ RUN `
   setx HOME "%USERPROFILE%" || exit 0 `
   setx TEMP "%USERPROFILE%\AppData\Local\Temp" || exit 0 `
   setx TMP "%USERPROFILE%\AppData\Local\Temp"  || exit 0 
-# ─── COPY POWERSHELL CORE FROM THE INSTALLER CONTAINER ──────────────────────────
-COPY --from=powershell-installer ["\\PowerShell\\", "$ProgramFiles\\PowerShell"]
 # ─── INITIAL SETUP ──────────────────────────────────────────────────────────────
 USER ContainerAdministrator
+# ─── COPY POWERSHELL CORE FROM THE INSTALLER CONTAINER ──────────────────────────
+COPY --from=powershell-installer ["\\PowerShell\\", "$ProgramFiles\\PowerShell"]
 # ─── SETTING SHELL ──────────────────────────────────────────────────────────────
 SHELL ["pwsh","-Command", "$ErrorActionPreference = 'Stop'; $ProgressPreference = 'SilentlyContinue';"]
 ARG user="code"

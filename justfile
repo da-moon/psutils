@@ -51,6 +51,7 @@ docker : docker-stop
   fjolsvin/pwsh-servercore \
   pwsh;
 # ────────────────────────────────────────────────────────────────────────────────
+alias up:=sshd
 sshd: docker-stop
   docker run \
   --mount type=bind,source='{{justfile_directory()}}',target='c:\Users\{{user}}\workspace' \
@@ -64,7 +65,6 @@ sshd: docker-stop
   '{{user}}';
 # ────────────────────────────────────────────────────────────────────────────────
 alias code:=vscode-server
-alias up:=vscode-server
 # & 'C:\Users\code\.vscode-server\bin\*\server.cmd' --start-server --host=127.0.0.1 --enable-remote-auto-s shutdown --port=0 --connection-secret "C:\Users\code\.vscode-server\.3c4e3df9e89829dce27b7b5c24508306b151f30d.token" *> 'C:\Users\code\.vscode-server\.3c4e3df9e89829dce27b7b5c24508306b151f30d.log'
 # sshd
 vscode-server:
