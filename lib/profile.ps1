@@ -219,17 +219,17 @@ function Set-Hyperv-Up {
   param (
     [string] $name = $Env:VMName
   )
-  $box=Get-VM -Name $name -ErrorAction SilentlyContinue
+  $box = Get-VM -Name $name -ErrorAction SilentlyContinue
   if ($box) {
-    if  ($box.State -ne "Running" ) {
+    if ($box.State -ne "Running" ) {
       Start-VM -Name $name
     }
     # ssh config setup
-    $addr= Get-Hyperv-IP-Addr | Select-Object -First 1
+    $addr = Get-Hyperv-IP-Addr | Select-Object -First 1
     # [ NOTE ] : we are assuming that the box's username is
     # the same as the host's logged in user
-    Set-SSH-Config $Env:VMName $Env:USERNAME $addr
-    $hostname=Get-Hostname ;
+    Set-SSH-Config $name $Env:USERNAME $addr
+    $hostname = Get-Hostname ;
     VMConnect $hostname $name
   }
 }
