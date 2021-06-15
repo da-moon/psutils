@@ -206,6 +206,7 @@ function Get-Hyperv-IP-Addr {
   $box=Get-VM -Name $name -ErrorAction SilentlyContinue
   if ($box) {
     if  ($box.State -ne "off" ) {
+      $IPV4Pattern = '^(?:(?:0?0?\d|0?[1-9]\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}(?:0?0?\d|0?[1-9]\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$'
       Get-Vm -Name $Env:VMName  | `
       Select-Object -ExpandProperty Networkadapters | `
       Select-Object -ExpandProperty IPAddresses | `
