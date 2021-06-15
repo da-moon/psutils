@@ -75,11 +75,11 @@ function Set-SSH-Config {
     [Parameter(Mandatory = $true)][string] $user,
     [Parameter(Mandatory = $true)][string] $addr
   )
-    (Get-Content -Raw $Env:UserProfile\.ssh\config) `
+  (Get-Content -Raw $Env:UserProfile\.ssh\config) `
     -replace ('(?s)\r?\nHost {0}.*?MACs hmac-sha2-512\r?\n' `
-    -f $hostname) `
-    | Set-Content $Env:UserProfile\.ssh\config ;
-    "`nHost {0}
+      -f $hostname) `
+  | Set-Content $Env:UserProfile\.ssh\config ;
+  "`nHost {0}
     `tHostName {1}
     `tUser {2}
     `tStrictHostKeyChecking no
@@ -93,43 +93,43 @@ function Set-SSH-Config {
     $hostname, `
     $addr, `
     $user `
-    | Out-File -Encoding ascii -Append $Env:UserProfile\.ssh\config ;
+  | Out-File -Encoding ascii -Append $Env:UserProfile\.ssh\config ;
   
-    ((Get-Content -Raw $Env:UserProfile\.ssh\config ) `
-    -replace "(?m)^\s*`r`n",'').trim() `
+  ((Get-Content -Raw $Env:UserProfile\.ssh\config ) `
+      -replace "(?m)^\s*`r`n", '').trim() `
     -replace "`t", "  " `
     -replace "^\s\s*", "  " `
-    | Set-Content $Env:UserProfile\.ssh\config ;
-  }
+  | Set-Content $Env:UserProfile\.ssh\config ;
+}
 Function Set-WSL-DNS {
   Get-DnsClientServerAddress -AddressFamily ipv4 | `
-  Select-Object -ExpandProperty ServerAddresses | `
-  Get-Unique | `
-  Select-Object -First 3 | `
-  ForEach-Object { `
-    wsl -u root -- `
-    /bin/bash -c ('
+    Select-Object -ExpandProperty ServerAddresses | `
+    Get-Unique | `
+    Select-Object -First 3 | `
+    ForEach-Object { `
+      wsl -u root -- `
+      /bin/bash -c ('
     set -ex;
     sed -i \"/nameserver {0}/d\" /etc/resolv.conf && \
     echo \"nameserver {0}\" >> /etc/resolv.conf
-    ' -f $_)}
+    ' -f $_) }
 }
 function Test-Admin {
-  return ([System.Security.Principal.WindowsIdentity]::GetCurrent().UserClaims | ? { $_.Value -eq 'S-1-5-32-544'})
+  return ([System.Security.Principal.WindowsIdentity]::GetCurrent().UserClaims | ? { $_.Value -eq 'S-1-5-32-544' })
 }
 Function Get-CoreCount() {
   Get-WmiObject -Class Win32_Processor | Select-Object -ExpandProperty NumberOfLogicalProcessors
 }
-Function Get-Hostname(){
+Function Get-Hostname() {
   return (Get-WmiObject -Class Win32_ComputerSystem -Property Name).Name
 }
 Function Get-Environment-Variables {
   param (
-    [Parameter(Mandatory=$false)][string] $Variable
+    [Parameter(Mandatory = $false)][string] $Variable
   )
   if ($Variable) {
     Get-ChildItem Env:* | `
-    Where-Object -FilterScript { $_.Name -match $Variable   } | Select-Object -ExpandProperty Value
+      Where-Object -FilterScript { $_.Name -match $Variable } | Select-Object -ExpandProperty Value
     return
   }
   Get-ChildItem Env:*
@@ -148,8 +148,7 @@ function add_line_to_file([string] $line, [string] $path) {
     try {
       $null = New-Item -ItemType Directory -Path $parent -Force -ErrorAction Stop
       info "The directory [$parent] has been created."
-    }
-    catch {
+    } catch {
       throw $_.Exception.Message
     }
   }
@@ -157,8 +156,7 @@ function add_line_to_file([string] $line, [string] $path) {
     try {
       $null = New-Item -ItemType File -Path $path -Force -ErrorAction Stop
       info "The file [$path] has been created."
-    }
-    catch {
+    } catch {
       throw $_.Exception.Message
     }
   }
@@ -181,7 +179,7 @@ function Remove-AllContainers {
 }
 function Get-ContainerIPAddress {  
   param (
-      [string] $id
+    [string] $id
   )
   & docker inspect --format '{{ .NetworkSettings.Networks.nat.IPAddress }}' $id
 }
@@ -192,10 +190,10 @@ function Set-Hyperv-Down {
   param (
     [string] $name = $Env:VMName
   )
-  $box=Get-VM -Name $name -ErrorAction SilentlyContinue
+  $box = Get-VM -Name $name -ErrorAction SilentlyContinue
   if ($box) {
-    if  ($box.State -ne "off" ) {
-    Stop-VM -TurnOff -Force -Name $name
+    if ($box.State -ne "off" ) {
+      Stop-VM -TurnOff -Force -Name $name
     }
   }
 }
@@ -203,14 +201,14 @@ function Get-Hyperv-IP-Addr {
   param (
     [string] $name = $Env:VMName
   )
-  $box=Get-VM -Name $name -ErrorAction SilentlyContinue
+  $box = Get-VM -Name $name -ErrorAction SilentlyContinue
   if ($box) {
-    if  ($box.State -ne "off" ) {
+    if ($box.State -ne "off" ) {
       $IPV4Pattern = '^(?:(?:0?0?\d|0?[1-9]\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}(?:0?0?\d|0?[1-9]\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$'
       Get-Vm -Name $Env:VMName  | `
-      Select-Object -ExpandProperty Networkadapters | `
-      Select-Object -ExpandProperty IPAddresses | `
-      Where-Object -FilterScript { $_ -match $IPV4Pattern }
+        Select-Object -ExpandProperty Networkadapters | `
+        Select-Object -ExpandProperty IPAddresses | `
+        Where-Object -FilterScript { $_ -match $IPV4Pattern }
     }
   }
 }
@@ -229,9 +227,15 @@ function Set-Hyperv-Up {
     # [ NOTE ] : we are assuming that the box's username is
     # the same as the host's logged in user
     Set-SSH-Config $name $Env:USERNAME $addr
-    $hostname = Get-Hostname ;
-    VMConnect $hostname $name
   }
+}
+function New-Hyperv-Session { 
+  param (
+    [string] $name = $Env:VMName
+  )
+  Set-Hyperv-Up $name
+  VMConnect $hostname $name
+  $hostname = Get-Hostname ;
 }
 
 #
@@ -254,13 +258,14 @@ function tfo([Parameter(ValueFromRemainingArguments = $true)]$params) { & terraf
 Set-Alias vmup Set-Hyperv-Up
 Set-Alias vmdown Set-Hyperv-Down
 Set-Alias vmip Get-Hyperv-IP-Addr
+Set-Alias vmc New-Hyperv-Session
 Set-Alias lsvm Get-VM
 # ─── NIX ALIASES ────────────────────────────────────────────────────────────────
 Set-Alias nproc  Get-CoreCount
 Set-Alias hostname  Get-Hostname
 Set-Alias which  Get-Command
 Set-Alias printenv Get-Environment-Variables
-If (Test-Path Alias:pwd) {Remove-Item Alias:pwd}
+If (Test-Path Alias:pwd) { Remove-Item Alias:pwd }
 Set-Alias pwd Get-WD
 # ─── DOCKER ALIASES ─────────────────────────────────────────────────────────────
 Set-Alias drm  Remove-StoppedContainers
@@ -277,32 +282,19 @@ Set-Alias dip  Get-ContainerIPAddress
 $Env:VMName = 'ArchLinux'
 $Env:VAGRANT_DEFAULT_PROVIDER = "hyperv"
 # ─── DOCKER ENVIRONMENT VARIABLES ───────────────────────────────────────────────
-$Env:DOCKER_BUILDKIT=1
-$Env:COMPOSE_DOCKER_CLI_BUILD=1
+$Env:DOCKER_BUILDKIT = 1
+$Env:COMPOSE_DOCKER_CLI_BUILD = 1
 $Env:BUILDKIT_PROGRESS = "plain"
 # ─── PYTHON ENVIRONMENT VARIABLES ───────────────────────────────────────────────
 $Env:PATH = $Env:PATH + ";$HOME\.poetry\bin" + ";$HOME\AppData\Local\bin"
 # ─── GOLANG ENVIRONMENT VARIABLES ───────────────────────────────────────────────
-$Env:GOROOT=$Env:SystemDrive + "\go"
-$Env:GOPATH=$Env:UserProfile + "\go"
-$Env:GO111MODULE="on"
-$Env:PATH="$Env:GOROOT\bin;$Env:GOPATH\bin;$Env:PATH"
+$Env:GOROOT = $Env:SystemDrive + "\go"
+$Env:GOPATH = $Env:UserProfile + "\go"
+$Env:GO111MODULE = "on"
+$Env:PATH = "$Env:GOROOT\bin;$Env:GOPATH\bin;$Env:PATH"
 # ─── MISC ENVIRONMENT VARIABLES ─────────────────────────────────────────────────
-$Env:DISPLAY="localhost:0.0"
+$Env:DISPLAY = "localhost:0.0"
 $Env:VAULT_SKIP_VERIFY = "true"
 $Env:CONSUL_SCHEME = "https"
 $Env:CONSUL_HTTP_SSL = "true"
 $Env:CONSUL_HTTP_SSL_VERIFY = "false"
-
-#
-# ────────────────────────────────────────────────────────────────────── I ──────────
-#   :::::: E X E C U T I O N   S T A R T : :  :   :    :     :        :          :
-# ────────────────────────────────────────────────────────────────────────────────
-#
-
-# ─── BASHLIKE TAB COMPLETION ────────────────────────────────────────────────────
-Set-PSReadlineKeyHandler -Key Tab -Function Complete
-# ─── FIX WSL DNS ────────────────────────────────────────────────────────────────
-Set-WSL-DNS
-# ─── STARSHIP SETUP ─────────────────────────────────────────────────────────────
-Invoke-Expression (&starship init powershell)
