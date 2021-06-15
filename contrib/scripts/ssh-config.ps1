@@ -6,7 +6,7 @@ param (
 
   (Get-Content -Raw $Env:UserProfile\.ssh\config) `
   -replace ('(?s)\r?\nHost {0}.*?MACs hmac-sha2-512\r?\n' `
-  -f "psutils") `
+  -f "$container") `
   | Set-Content $Env:UserProfile\.ssh\config ;
 
   "`nHost {0}
