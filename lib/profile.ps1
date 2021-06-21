@@ -8,13 +8,20 @@
 $Env:LANG = "en_US.UTF-8";
 # ─── MODULES ────────────────────────────────────────────────────────────────────
 $modules = @()
+$modules += 'PowerShellGet'
+$modules += 'BitsTransfer'
+$modules += 'Terminal-Icons'
+$modules += 'cd-extras'
+$modules += 'powershell-yaml'
 $modules += 'oh-my-posh'
 $modules += 'posh-git'
-$modules += 'Terminal-Icons'
 $modules += 'posh-docker'
+$modules += 'DockerCompletion'
 # https://github.com/jdhitsolutions/PSScriptTools#General-Tools
 $modules += 'PSScriptTools'
-$modules += 'BitsTransfer'
+$modules += 'PSReadLine'
+
+
 # ─── VIRTUALIZATION ENVIRONMENT VARIABLES ───────────────────────────────────────
 $Env:VMName = 'ArchLinux'
 $Env:VAGRANT_DEFAULT_PROVIDER = "hyperv"
@@ -155,13 +162,16 @@ function getopt($argv, $shortopts, $longopts) {
             return err "Option --$name got an invalid argument: [ $faulty_arg ]"
           }
           $opts.$name = $argv[++$i]
-        } else {
+        }
+        else {
           $opts.$name = $true
         }
-      } else {
+      }
+      else {
         return err "Option --$name not recognized."
       }
-    } elseif ($arg.startswith('-') -and $arg -ne '-') {
+    }
+    elseif ($arg.startswith('-') -and $arg -ne '-') {
       for ($j = 1; $j -lt $arg.length; $j++) {
         $letter = $arg[$j].tostring()
 
@@ -177,19 +187,150 @@ function getopt($argv, $shortopts, $longopts) {
               return err "Option --$name got an invalid argument: [ $faulty_arg ]"
             }
             $opts.$letter = $argv[++$i]
-          } else {
+          }
+          else {
             $opts.$letter = $true
           }
-        } else {
+        }
+        else {
           return err "Option -$letter not recognized."
         }
       }
-    } else {
+    }
+    else {
       $rem += $arg
     }
   }
 
   $opts, $rem
+}
+
+# ─── PACKAGE MANAGEMENT ─────────────────────────────────────────────────────────
+# https://github.com/SorenMaagaard/dotfiles/blob/master/powershell/profile.ps1
+
+function Update-Repo {
+  Begin {
+    info "Updating Repo ..."
+  }
+  Process {
+    $packageProviders = PackageManagement\Get-PackageProvider -ListAvailable
+    $checkPowerShellGet = $packageProviders | Where-Object name -eq "PowerShellGet"
+    $checkNuget = $packageProviders | Where-Object name -eq "NuGet"
+    $checkPSGallery = Get-PSRepository PSGallery
+    if (!$checkPSGallery -or $checkPSGallery.InstallationPolicy -ne 'Trusted') {
+      Set-PSRepository PSGallery -InstallationPolicy trusted -SourceLocation "https://www.powershellgallery.com/api/v2"
+    }
+    if (!$checkPowerShellGet) {
+      PackageManagement\Get-PackageProvider -Name PowerShellGet -Force
+    }
+    if (!$checkNuget) {
+      PackageManagement\Get-PackageProvider -Name NuGet -Force
+    } 
+  }
+  End {
+    success "Updating Repo ..."
+  }
+}
+function Install-Modules {
+  param(
+    [parameter(Mandatory, ValueFromPipeline)]
+    [string[]] $modulesNames
+  )
+  Begin {
+    info "Installing Modules..."
+    Import-Module PowerShellGet -ErrorAction SilentlyContinue
+    Update-Repo
+  }
+  Process {
+    $installedModules = Get-InstalledModule
+    foreach ($moduleName in $modulesNames) {
+      if (!(Get-Module -Name $moduleName)) {
+        Try {
+          info "Checking $($moduleName)"
+          $online = Find-Module $moduleName
+        }
+        Catch {
+          warn "Module $($module.name) was not found in the PSGallery"
+          continue
+        }
+        if ($online) {
+          if ($installedModules.Name -notcontains $moduleName) {
+            info "installing $($moduleName) module"
+            Install-Module $moduleName `-Force -AllowClobber -SkipPublisherCheck `
+              -Scope CurrentUser `
+              -ErrorAction SilentlyContinue
+            success "installing $($moduleName) module"
+          }
+        }
+      }
+    }
+  }
+  End {
+    success "Installing Modules..."
+  }
+}
+# [ NOTE ] Modules should be installed on User scope
+function Get-EnsureModule {
+  param(
+    [parameter(Mandatory, ValueFromPipeline)]
+    [string[]] $modulesNames
+  )
+  Begin {
+    info "Ensuring Modules..."
+    Update-Repo
+  }
+  Process {
+    foreach ($moduleName in $modulesNames) {
+      if (!(Get-Module -Name $moduleName)) {
+        try {
+          info "importing $($moduleName)"
+          Import-Module $moduleName -ErrorAction Stop
+          success "importing $($moduleName) module"
+        }
+        catch {
+          info "installing $($moduleName) module"
+          Install-Module $moduleName `-Force -AllowClobber -SkipPublisherCheck -Scope CurrentUser `
+            success "installing $($moduleName) module"
+          info "importing $($moduleName) module"
+          Import-Module $moduleName
+          success "importing $($moduleName) module"
+        }
+      }
+    }
+  }
+  End {
+    success "Ensuring Modules..."
+  }
+}
+function Update-Modules {
+  Begin {
+    info "updating Modules..."
+    Update-Repo
+    Import-Module PowerShellGet -ErrorAction SilentlyContinue
+  }
+  Process {
+    $installedModules = Get-InstalledModule
+    foreach ($module in $installedModules) {
+      Try {
+        info "Checking $($module.name)"
+        $online = Find-Module $module.name
+        success "Checking $($module.name)"
+      }
+      Catch {
+        warn "Module $($module.name) was not found in the PSGallery"
+      }
+      if ($online.version -gt $module.version) {
+        info "Updating $($module.name) module"
+        Update-Module -SkipPublisherCheck `
+          -Name $module.name `
+          -ErrorAction SilentlyContinue
+        success "Updating $($module.name) module"
+      }
+    }
+  }
+  End {
+    success "updating Modules..."
+  }
 }
 # ─── SYSTEM UTILITY FUNCTIONS ───────────────────────────────────────────────────
 # [ TODO ] use pwd function
@@ -391,19 +532,28 @@ function New-Hyperv-Session {
 }
 # ─── UTILITY ────────────────────────────────────────────────────────────────────
 function Set-WSL-DNS {
-  # info "fixing wsl dns"
-  Get-DnsClientServerAddress -AddressFamily ipv4 | `
-    Select-Object -ExpandProperty ServerAddresses | `
-    Get-Unique | `
-    Select-Object -First 3 | `
-    ForEach-Object { `
+  # 
+  Begin {
+    info "Fixing WSL dns nameservers ..."
+  }
+  Process {
+    Get-DnsClientServerAddress -AddressFamily ipv4 | `
+      Select-Object -ExpandProperty ServerAddresses | `
+      Get-Unique | `
+      Select-Object -First 3 | `
+      ForEach-Object { `
+        info ('adding nameserver "{0}"' -f $_) ;
       wsl -u root -- `
-      /bin/bash -c ('
+        /bin/bash -c ('
             set -ex;
             sed -i \"/nameserver {0}/d\" /etc/resolv.conf && \
             echo \"nameserver {0}\" >> /etc/resolv.conf
             ' -f $_) ;
-    # success ('nameserver "{0}" was added' -f $_) ;
+      success ('adding nameserver "{0}"' -f $_) ;
+    }
+  }
+  End {
+    success "Fixing WSL dns nameservers ..."
   }
 }
 function Is-Windows {
@@ -416,7 +566,8 @@ function Get-Username {
   )
   if ($OS -eq "Windows") {
     $env:USERNAME
-  } else {
+  }
+  else {
     $env:USER
   }
 }
@@ -453,7 +604,8 @@ function RemoveTo-Trash {
     if ($PSBoundParameters.ContainsKey('Path')) {
       $Path | Where-Object { ![string]::IsNullOrWhiteSpace($_) } | Set-Variable Path
       $targets = Convert-Path $Path
-    } else {
+    }
+    else {
       $targets = Convert-Path -LiteralPath $LiteralPath
     }
     $targets | ForEach-Object {
@@ -549,7 +701,8 @@ function gs { git status -sb }
 if (Is-Windows) {
   function l { Get-ChildItem $args }
   function la { Get-ChildItem -Force $args }
-} else {
+}
+else {
   function l { Get-ChildItem -l $args }
   function la { Get-ChildItem -a $args }
 }
@@ -563,6 +716,17 @@ if (Is-Windows) {
 # Use utf-8
 chcp 65001
 $OutputEncoding = [Console]::OutputEncoding
+# [ NOTE ] Establishing Cmdlet Default Parameters
+# https://github.com/jkavanagh58/slackgroup/blob/master/ProfilesCollection/sample-profile.ps1
+$PSDefaultParameterValues = @{
+  "install-module:Confirm" = $False
+  "install-module:Verbose" = $False
+  "install-module:Force"   = $True
+  "install-module:Scope"   = "CurrentUser"
+  "update-module:Confirm"  = $False
+  "update-module:Verbose"  = $False
+  "update-module:Force"    = $True
+}
 
 # ─── WINDOWS PACKAGE MANAGEMENT ─────────────────────────────────────────────────
 Set-Alias gpkg Get-Package
@@ -600,7 +764,8 @@ if (Get-Command fzf -ErrorAction SilentlyContinue) {
 if (Is-Windows) {
   If (Test-Path Alias:ls) { Remove-Item Alias:ls }
   Set-Alias ls Get-ChildItem
-} else {
+}
+else {
   Set-Alias ls lsd
 }
 Set-Alias wsldns Set-WSL-DNS
@@ -615,6 +780,7 @@ Set-PSReadlineKeyHandler -Key UpArrow -Function HistorySearchBackward
 Set-PSReadlineKeyHandler -Key DownArrow -Function HistorySearchForward
 Set-PSReadLineKeyHandler -Key 'Ctrl+a' -Function BeginningOfLine
 # ─── STARSHIP SETUP ─────────────────────────────────────────────────────────────
+# starship
 if (Get-Command starship -ErrorAction SilentlyContinue) {
   Invoke-Expression (&starship init powershell)
 }
@@ -624,27 +790,13 @@ $function_ctx = [scriptblock]::create(@"
   function warn {${function:warn}}
   function success {${function:success}}
   function Set-WSL-DNS {${function:Set-WSL-DNS}}
+  function Update-Repo {${function:Update-Repo}}
+  function Get-EnsureModule {${function:Get-EnsureModule}}
+  function Update-Modules {${function:Update-Modules}}
 "@)
+$null = Start-Job -InitializationScript $function_ctx -Name "async_module_init" -ScriptBlock { $Using:modules | Get-EnsureModule }
 # ────────────────────────────────────────────────────────────────────────────────
-$null = Start-Job `
-  -InitializationScript $function_ctx `
-  -Name "async_module_init" `
-  -ScriptBlock {
-  $repository = Get-PSRepository | Where-Object InstallationPolicy -EQ Trusted `
-    -ErrorAction SilentlyContinue | Select-Object -First 1
-  if (-not $repository) {
-    Set-PSRepository -name PSGallery -InstallationPolicy Trusted  -ErrorAction `
-      SilentlyContinue
-  }
-  foreach ($module in $Using:modules) {
-    # info ("importing "+$module)
-    if (-not(Get-Module -ListAvailable -Name $module)) {
-      Install-Module -Scope CurrentUser -Name $module -Repository PSGallery `
-        -SkipPublisherCheck -ErrorAction SilentlyContinue
-    }
-    Import-Module $module -ErrorAction SilentlyContinue
-  }
-}
+$null = Start-Job -InitializationScript $function_ctx -Name "async_update_modules" { Update-Modules }
 # ────────────────────────────────────────────────────────────────────────────────
 $null = Start-Job -InitializationScript $function_ctx -Name "async_wsl_dns" { Set-WSL-DNS }
 # ────────────────────────────────────────────────────────────────────────────────
@@ -671,7 +823,8 @@ $null = Register-ObjectEvent -InputObject $timer -EventName Elapsed -SourceIdent
   $null = Unregister-Event "async"
   $null = Remove-Job "async"
   $Host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates 0 , $host.UI.RawUI.CursorPosition.Y
-  # success "Asynchronous profile load was completed"
+  success "Asynchronous profile load was completed"
 }
-# info "Asynchronous profile load starting ..."
+info "Asynchronous profile load starting ..."
 $timer.Start()
+Remove-Variable modules
