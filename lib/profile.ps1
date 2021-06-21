@@ -610,14 +610,11 @@ Set-Alias g git
 Set-Alias d Remove-With-Recurse
 # ─── READLINE SETTING ───────────────────────────────────────────────────────────
 # https://github.com/yukimemi/dotfiles/blob/main/win/Microsoft.PowerShell_profile.ps1
-Set-PSReadLineOption -EditMode vi
 Set-PSReadlineKeyHandler -Key Tab -Function Complete
 Set-PSReadlineKeyHandler -Key UpArrow -Function HistorySearchBackward
 Set-PSReadlineKeyHandler -Key DownArrow -Function HistorySearchForward
-Set-PSReadLineKeyHandler -Key 'Shift+Spacebar' -Function PossibleCompletions
 Set-PSReadLineKeyHandler -Key 'Ctrl+a' -Function BeginningOfLine
 # ─── STARSHIP SETUP ─────────────────────────────────────────────────────────────
-# starship
 if (Get-Command starship -ErrorAction SilentlyContinue) {
   Invoke-Expression (&starship init powershell)
 }
