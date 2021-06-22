@@ -500,27 +500,28 @@ function Set-Hyperv-Up {
   }
   [int]$counter = 5
   # ssh config setup
-  $addr = Get-Vm -Name $name  | `
-    Select-Object -ExpandProperty Networkadapters | `
-    Select-Object -ExpandProperty IPAddresses
-  while (-not($addr)) {
+  $addr = Get-Vm -Name $name  `
+  | Select-Object -ExpandProperty Networkadapters `
+  | Select-Object -ExpandProperty IPAddresses `
+  | Where-Object -FilterScript { $_ -match $IPV4Pattern } `
+  Select-Object -First 1
+  while (-not($addr) -or ($addr.Length == 0) ) {
     if ($counter -eq 0) {
       abort " $name network is not ready "
     }
     warn "[ $counter ] $name network is not ready. retrying"
     Start-Sleep -Seconds 3
-    $addr = Get-Vm -Name $name  | `
-      Select-Object -ExpandProperty Networkadapters | `
-      Select-Object -ExpandProperty IPAddresses
+    $IPV4Pattern = '^(?:(?:0?0?\d|0?[1-9]\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}(?:0?0?\d|0?[1-9]\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$'
+    $addr = Get-Vm -Name $name  `
+    | Select-Object -ExpandProperty Networkadapters `
+    | Select-Object -ExpandProperty IPAddresses `
+    | Where-Object -FilterScript { $_ -match $IPV4Pattern } `
+    Select-Object -First 1
     $counter -= 1;
   }
-  $IPV4Pattern = '^(?:(?:0?0?\d|0?[1-9]\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}(?:0?0?\d|0?[1-9]\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$'
-  $host_addr = $addr | `
-    Where-Object -FilterScript { $_ -match $IPV4Pattern } | `
-    Select-Object -First 1
   # [ NOTE ] : we are assuming that the box's username is
   # the same as the host's logged in user
-  Set-SSH-Config $name $Env:USERNAME $host_addr
+  Set-SSH-Config $name $Env:USERNAME $addr
 }
 function New-Hyperv-Session {
   param (
