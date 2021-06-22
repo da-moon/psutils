@@ -21,6 +21,26 @@ function ParsePythonVersion () {
   $version_obj = [version]$python_version
   return ($version_obj.major, $version_obj.minor, $version_obj.build, "")
 }
+param($cmd)
+set-strictmode -off
+if (($PSVersionTable.PSVersion.Major) -lt 5) {
+  Write-Output "PowerShell 5 or later is required to run python-installer."
+  Write-Output "Upgrade PowerShell: https://docs.microsoft.com/en-us/powershell/scripting/setup/installing-windows-powershell"
+  break
+}
+
+# [ NOTE ] => show notification to change execution policy:
+$allowedExecutionPolicy = @('Unrestricted', 'RemoteSigned', 'ByPass')
+if ((Get-ExecutionPolicy).ToString() -notin $allowedExecutionPolicy) {
+  Write-Output "PowerShell requires an execution policy in [$($allowedExecutionPolicy -join ", ")] to run python-installer."
+  Write-Output "For example, to set the execution policy to 'RemoteSigned' please run :"
+  Write-Output "'Set-ExecutionPolicy RemsoteSigned -scope CurrentUser'"
+  break
+}
+# [ NOTE ] => quit if anything goes wrong
+$old_erroractionpreference = $erroractionpreference
+$erroractionpreference = 'stop'
+
 [string] $architecture = reg query "HKLM\System\CurrentControlSet\Control\Session Manager\Environment" /v PROCESSOR_ARCHITECTURE | ForEach-Object { ($_ -split "\s+")[3] }
 $architecture = $architecture.ToLower();
 $architecture = $architecture.Trim();

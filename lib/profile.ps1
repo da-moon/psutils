@@ -162,16 +162,13 @@ function getopt($argv, $shortopts, $longopts) {
             return err "Option --$name got an invalid argument: [ $faulty_arg ]"
           }
           $opts.$name = $argv[++$i]
-        }
-        else {
+        } else {
           $opts.$name = $true
         }
-      }
-      else {
+      } else {
         return err "Option --$name not recognized."
       }
-    }
-    elseif ($arg.startswith('-') -and $arg -ne '-') {
+    } elseif ($arg.startswith('-') -and $arg -ne '-') {
       for ($j = 1; $j -lt $arg.length; $j++) {
         $letter = $arg[$j].tostring()
 
@@ -187,17 +184,14 @@ function getopt($argv, $shortopts, $longopts) {
               return err "Option --$name got an invalid argument: [ $faulty_arg ]"
             }
             $opts.$letter = $argv[++$i]
-          }
-          else {
+          } else {
             $opts.$letter = $true
           }
-        }
-        else {
+        } else {
           return err "Option -$letter not recognized."
         }
       }
-    }
-    else {
+    } else {
       $rem += $arg
     }
   }
@@ -248,8 +242,7 @@ function Install-Modules {
         Try {
           info "Checking $($moduleName)"
           $online = Find-Module $moduleName
-        }
-        Catch {
+        } Catch {
           warn "Module $($module.name) was not found in the PSGallery"
           continue
         }
@@ -286,8 +279,7 @@ function Get-EnsureModule {
           info "importing $($moduleName)"
           Import-Module $moduleName -ErrorAction Stop
           success "importing $($moduleName) module"
-        }
-        catch {
+        } catch {
           info "installing $($moduleName) module"
           Install-Module $moduleName `-Force -AllowClobber -SkipPublisherCheck -Scope CurrentUser `
             success "installing $($moduleName) module"
@@ -315,8 +307,7 @@ function Update-Modules {
         info "Checking $($module.name)"
         $online = Find-Module $module.name
         success "Checking $($module.name)"
-      }
-      Catch {
+      } Catch {
         warn "Module $($module.name) was not found in the PSGallery"
       }
       if ($online.version -gt $module.version) {
@@ -333,8 +324,11 @@ function Update-Modules {
   }
 }
 # ─── SYSTEM UTILITY FUNCTIONS ───────────────────────────────────────────────────
-# [ TODO ] use pwd function
-# function ssh([Parameter(ValueFromRemainingArguments = $true)]$params) { & ssh -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null' $params }
+function Connect-SSH([Parameter(ValueFromRemainingArguments = $true)]$params) { 
+  $command = Invoke-Expression -Command 'powershell -NoProfile "Get-Command ssh | Select-Object -ExpandProperty Source"'
+  $command += " -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null'"
+  Invoke-Expression -Command "$($command) $($params)"
+}
 function Set-SSH-Config {
   param (
     [Parameter(Mandatory = $true)][string] $hostname,
@@ -485,43 +479,80 @@ function Set-Hyperv-Down {
     }
   }
 }
+function Get-Hyperv-VM-IP {
+  [OutputType([String])]
+  param (
+    [string] $name = $Env:VMName
+  )
+  Begin {
+    info "Getting VM $($name) IP address ..."
+    $box = Get-VM -Name $name -ErrorAction SilentlyContinue
+    [int]$counter = 5
+    while (-not($box)) {
+      if ($counter -eq 0) {
+        abort "$name is not ready "
+      }
+      warn "$name not ready. Waiting"
+      Start-Sleep -Seconds 3
+      $box = Get-VM -Name $name -ErrorAction SilentlyContinue
+      $counter -= 1;
+    }      
+  }
+  Process {
+    [int]$counter = 5
+    $IPV4Pattern = '^(?:(?:0?0?\d|0?[1-9]\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}(?:0?0?\d|0?[1-9]\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$'
+    $addr = Get-Vm -Name $name  `
+    | Select-Object -ExpandProperty Networkadapters `
+    | Select-Object -ExpandProperty IPAddresses
+    while ((-not($addr)) -or (($addr.Length) -and ($addr.Length -eq 0)) ) {
+      if ($counter -eq 0) {
+        abort " $name network is not ready "
+      }
+      warn "[ $counter ] $name network is not ready. retrying"
+      Start-Sleep -Seconds 3
+      $addr = Get-Vm -Name $name  `
+      | Select-Object -ExpandProperty Networkadapters `
+      | Select-Object -ExpandProperty IPAddresses 
+      $counter -= 1;
+    }
+    return $addr `
+    | Where-Object -FilterScript { $_ -match $IPV4Pattern } `
+    | Select-Object -First 1
+  }
+  End {
+    success "Getting VM $($name) IP address ..."
+  }
+}
 function Set-Hyperv-Up {
   param (
     [string] $name = $Env:VMName
   )
-  $box = Get-VM -Name $name -ErrorAction SilentlyContinue
-  while (-not($box)) {
-    warn "$name not ready. Waiting"
-    Start-Sleep -Seconds 3
+  Begin {
+    info "Starting VM $($name) ..."
     $box = Get-VM -Name $name -ErrorAction SilentlyContinue
+    [int]$counter = 5
+    while (-not($box)) {
+      if ($counter -eq 0) {
+        abort "$name is not ready "
+      }
+      warn "$name not ready. Waiting"
+      Start-Sleep -Seconds 3
+      $box = Get-VM -Name $name -ErrorAction SilentlyContinue
+      $counter -= 1;
+    }      
   }
-  if ($box.State -ne "Running" ) {
-    Start-VM -Name $name
-  }
-  [int]$counter = 5
-  # ssh config setup
-  $addr = Get-Vm -Name $name  `
-  | Select-Object -ExpandProperty Networkadapters `
-  | Select-Object -ExpandProperty IPAddresses `
-  | Where-Object -FilterScript { $_ -match $IPV4Pattern } `
-  Select-Object -First 1
-  while (-not($addr) -or ($addr.Length == 0) ) {
-    if ($counter -eq 0) {
-      abort " $name network is not ready "
+  Process {
+    if ($box.State -ne "Running" ) {
+      Start-VM -Name $name
     }
-    warn "[ $counter ] $name network is not ready. retrying"
-    Start-Sleep -Seconds 3
-    $IPV4Pattern = '^(?:(?:0?0?\d|0?[1-9]\d|1\d\d|2[0-5][0-5]|2[0-4]\d)\.){3}(?:0?0?\d|0?[1-9]\d|1\d\d|2[0-5][0-5]|2[0-4]\d)$'
-    $addr = Get-Vm -Name $name  `
-    | Select-Object -ExpandProperty Networkadapters `
-    | Select-Object -ExpandProperty IPAddresses `
-    | Where-Object -FilterScript { $_ -match $IPV4Pattern } `
-    Select-Object -First 1
-    $counter -= 1;
   }
-  # [ NOTE ] : we are assuming that the box's username is
-  # the same as the host's logged in user
-  Set-SSH-Config $name $Env:USERNAME $addr
+  End {
+    success "Starting VM $($name) ..."
+    [string]$addr = Get-Hyperv-VM-IP $name
+    # [ NOTE ] : we are assuming that the box's username is
+    # the same as the host's logged in user
+    Set-SSH-Config $name $Env:USERNAME $addr
+  }
 }
 function New-Hyperv-Session {
   param (
@@ -567,8 +598,7 @@ function Get-Username {
   )
   if ($OS -eq "Windows") {
     $env:USERNAME
-  }
-  else {
+  } else {
     $env:USER
   }
 }
@@ -605,8 +635,7 @@ function RemoveTo-Trash {
     if ($PSBoundParameters.ContainsKey('Path')) {
       $Path | Where-Object { ![string]::IsNullOrWhiteSpace($_) } | Set-Variable Path
       $targets = Convert-Path $Path
-    }
-    else {
+    } else {
       $targets = Convert-Path -LiteralPath $LiteralPath
     }
     $targets | ForEach-Object {
@@ -702,8 +731,7 @@ function gs { git status -sb }
 if (Is-Windows) {
   function l { Get-ChildItem $args }
   function la { Get-ChildItem -Force $args }
-}
-else {
+} else {
   function l { Get-ChildItem -l $args }
   function la { Get-ChildItem -a $args }
 }
@@ -736,6 +764,7 @@ Set-Alias fpkg Find-Package
 Set-Alias vmup Set-Hyperv-Up
 Set-Alias vmdown Set-Hyperv-Down
 Set-Alias vmc New-Hyperv-Session
+Set-Alias vmip Get-Hyperv-VM-IP
 Set-Alias lsvm Get-VM
 # ─── NIX ALIASES ────────────────────────────────────────────────────────────────
 Set-Alias nproc  Get-CoreCount
@@ -748,6 +777,8 @@ If (Test-Path Alias:pwd) { Remove-Item Alias:pwd }
 Set-Alias pwd Get-WD
 If (Test-Path Alias:cat) { Remove-Item Alias:cat }
 Set-Alias cat Get-Content-Bat
+If (Test-Path Alias:ssh) { Remove-Item Alias:ssh }
+Set-Alias ssh Connect-SSH
 Set-Alias size Get-Size
 Set-Alias tail Watch-File
 Set-Alias grep Search-Input
@@ -765,8 +796,7 @@ if (Get-Command fzf -ErrorAction SilentlyContinue) {
 if (Is-Windows) {
   If (Test-Path Alias:ls) { Remove-Item Alias:ls }
   Set-Alias ls Get-ChildItem
-}
-else {
+} else {
   Set-Alias ls lsd
 }
 Set-Alias wsldns Set-WSL-DNS
