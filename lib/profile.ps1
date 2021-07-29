@@ -4,8 +4,9 @@
 # ────────────────────────────────────────────────────────────────────────────────────────────
 #
 
-# ─── FOR GIT TO CORRECTLY SHOW UNICODE FILES CONTENT ────────────────────────────
-$Env:LANG = "en_US.UTF-8";
+$Env:DISPLAY = "localhost:0.0"
+# ─── VIRTUALIZATION ENVIRONMENT VARIABLES ───────────────────────────────────────
+$Env:VMName = 'ArchLinux'
 # ─── MODULES ────────────────────────────────────────────────────────────────────
 $modules = @()
 $modules += 'PowerShellGet'
@@ -13,30 +14,98 @@ $modules += 'BitsTransfer'
 $modules += 'Terminal-Icons'
 $modules += 'cd-extras'
 $modules += 'powershell-yaml'
-$modules += 'oh-my-posh'
-$modules += 'posh-git'
-$modules += 'posh-docker'
-$modules += 'DockerCompletion'
+$modules += 'PowerTab'
+$modules += 'ZLocation'
+$modules += 'posh-sshell'
+if ((Test-Path $Env:LOCALAPPDATA\Microsoft\WindowsApps )) {
+  $Env:PATH = $Env:PATH + ";$Env:LOCALAPPDATA\Microsoft\WindowsApps"
+}
+if ((Test-Path $HOME\.poetry\bin)) {
+  $Env:PATH = $Env:PATH + ";$HOME\.poetry\bin"
+}
+if ((Test-Path $HOME\AppData\Local\bin)) {
+  $Env:PATH = $Env:PATH + ";$HOME\AppData\Local\bin"
+}
 # https://github.com/jdhitsolutions/PSScriptTools#General-Tools
 $modules += 'PSScriptTools'
-$modules += 'PSReadLine'
+if ($host.Name -eq "ConsoleHost") {
+  $modules += 'Profile'
+  $modules += 'PSReadLine'
+}
+if (Get-Command vagrant -ErrorAction SilentlyContinue) {
+  $Env:VAGRANT_DEFAULT_PROVIDER = "hyperv"
+}
+if (Get-Command git -ErrorAction SilentlyContinue) {
+  $modules += 'posh-git'
+  # ─── FOR GIT TO CORRECTLY SHOW UNICODE FILES CONTENT ────────────────────────────
+  $Env:LANG = "en_US.UTF-8";
+  Invoke-Expression -Command "git config --global core.editor '$($Env:EDITOR)' 2>&1" -ErrorAction SilentlyContinue  | Out-Null
+}
+if (Get-Command cargo -ErrorAction SilentlyContinue) {
+  $modules += 'posh-cargo'
+}
+if (Get-Command npm -ErrorAction SilentlyContinue) {
+  $modules += 'npm-completion'
+}
+if (Get-Command yarn -ErrorAction SilentlyContinue) {
+  $modules += 'yarn-completion'
+}
+if (Get-Command scoop -ErrorAction SilentlyContinue) {
+  $modules += 'scoop-completion'
+}
+if (Get-Command docker -ErrorAction SilentlyContinue) {
+  $modules += 'posh-docker'
+  $modules += 'DockerCompletion'
+  # ─── DOCKER ENVIRONMENT VARIABLES ───────────────────────────────────────────────
+  $Env:DOCKER_BUILDKIT = 1
+  $Env:BUILDKIT_PROGRESS = "plain"
+  $Env:COMPOSE_DOCKER_CLI_BUILD = 1
 
+}
+if (Get-Command docker-compose -ErrorAction SilentlyContinue) {
+  $modules += 'DockerComposeCompletion'
+}
+if (Get-Command vault -ErrorAction SilentlyContinue) {
+  $Env:VAULT_SKIP_VERIFY = "true"
+}
+if (Get-Command consul -ErrorAction SilentlyContinue) {
+  $Env:CONSUL_SCHEME = "https"
+  $Env:CONSUL_HTTP_SSL = "true"
+  $Env:CONSUL_HTTP_SSL_VERIFY = "false"
+}
+if (Get-Command nvim -ErrorAction SilentlyContinue) {
+  $Env:EDITOR = "nvim"
+}
+#
+# ──────────────────────────────────────────────────────────── I ──────────
+#   :::::: C O M P L E T I O N : :  :   :    :     :        :          :
+# ──────────────────────────────────────────────────────────────────────
+#
 
-# ─── VIRTUALIZATION ENVIRONMENT VARIABLES ───────────────────────────────────────
-$Env:VMName = 'ArchLinux'
-$Env:VAGRANT_DEFAULT_PROVIDER = "hyperv"
-# ─── DOCKER ENVIRONMENT VARIABLES ───────────────────────────────────────────────
-$Env:DOCKER_BUILDKIT = 1
-$Env:COMPOSE_DOCKER_CLI_BUILD = 1
-$Env:BUILDKIT_PROGRESS = "plain"
-# ─── PYTHON ENVIRONMENT VARIABLES ───────────────────────────────────────────────
-$Env:PATH = $Env:PATH + ";$HOME\.poetry\bin" + ";$HOME\AppData\Local\bin"
-# ─── MISC ENVIRONMENT VARIABLES ─────────────────────────────────────────────────
-$Env:DISPLAY = "localhost:0.0"
-$Env:VAULT_SKIP_VERIFY = "true"
-$Env:CONSUL_SCHEME = "https"
-$Env:CONSUL_HTTP_SSL = "true"
-$Env:CONSUL_HTTP_SSL_VERIFY = "false"
+Register-ArgumentCompleter -CommandName ssh,scp,sftp -Native -ScriptBlock {
+  param($wordToComplete, $commandAst, $cursorPosition)
+  $sshConfig = Get-Content ${Env:HOMEPATH}\.ssh\config `
+  | ForEach-Object { ([string]$_).Split(' ')[1] } `
+  | Sort-Object -Unique
+
+  # For now just assume it's a hostname.
+  $textToComplete = $wordToComplete
+  $generateCompletionText = {
+      param($x)
+      $x
+  }
+  if ($wordToComplete -match "^(?<user>[-\w/\\]+)@(?<host>[-.\w]+)$") {
+      $textToComplete = $Matches["host"]
+      $generateCompletionText = {
+          param($hostname)
+          $Matches["user"] + "@" + $hostname
+      }
+  }
+
+  $sshConfig `
+  | Where-Object { $_ -like "${textToComplete}*" } `
+  | ForEach-Object { [System.Management.Automation.CompletionResult]::new((&$generateCompletionText($_)), $_, [System.Management.Automation.CompletionResultType]::ParameterValue, $_) }
+}
 
 #
 # ────────────────────────────────────────────────────────── I ──────────
@@ -162,13 +231,16 @@ function getopt($argv, $shortopts, $longopts) {
             return err "Option --$name got an invalid argument: [ $faulty_arg ]"
           }
           $opts.$name = $argv[++$i]
-        } else {
+        }
+        else {
           $opts.$name = $true
         }
-      } else {
+      }
+      else {
         return err "Option --$name not recognized."
       }
-    } elseif ($arg.startswith('-') -and $arg -ne '-') {
+    }
+    elseif ($arg.startswith('-') -and $arg -ne '-') {
       for ($j = 1; $j -lt $arg.length; $j++) {
         $letter = $arg[$j].tostring()
 
@@ -184,21 +256,70 @@ function getopt($argv, $shortopts, $longopts) {
               return err "Option --$name got an invalid argument: [ $faulty_arg ]"
             }
             $opts.$letter = $argv[++$i]
-          } else {
+          }
+          else {
             $opts.$letter = $true
           }
-        } else {
+        }
+        else {
           return err "Option -$letter not recognized."
         }
       }
-    } else {
+    }
+    else {
       $rem += $arg
     }
   }
 
   $opts, $rem
 }
+# ─── INI ────────────────────────────────────────────────────────────────────────
+# https://github.com/diddledan/one-script-wsl2-systemd/blob/master/services.ps1
+function Get-IniContent ([string]$filePath) {
+  $ini = @{}
+  switch -regex -file $FilePath {
+    "^\[(.+)\]" { # Section
+      $section = $matches[1]
+      $ini[$section] = @{}
+      $CommentCount = 0
+    }
+    "^(;.*)$" { # Comment
+      $value = $matches[1]
+      $CommentCount = $CommentCount + 1
+      $name = "Comment" + $CommentCount
+      $ini[$section][$name] = $value
+    }
+    "(.+?)\s*=(.*)" { # Key
+      $name, $value = $matches[1..2]
+      $ini[$section][$name] = $value
+    }
+  }
+  return $ini
+}
 
+function Out-IniFile($InputObject, $FilePath) {
+  $outFile = New-Item -ItemType file -Path $Filepath -Force
+  foreach ($i in $InputObject.keys) {
+    if (!($($InputObject[$i].GetType().Name) -eq "Hashtable")) {
+      #No Sections
+      Add-Content -Path $outFile -Value "$i=$($InputObject[$i])"
+    }
+    else {
+      #Sections
+      Add-Content -Path $outFile -Value "[$i]"
+      Foreach ($j in ($InputObject[$i].keys | Sort-Object)) {
+        if ($j -match "^Comment[\d]+") {
+          Add-Content -Path $outFile -Value "$($InputObject[$i][$j])"
+        }
+        else {
+          Add-Content -Path $outFile -Value "$j=$($InputObject[$i][$j])"
+        }
+
+      }
+      Add-Content -Path $outFile -Value ""
+    }
+  }
+}
 # ─── PACKAGE MANAGEMENT ─────────────────────────────────────────────────────────
 # https://github.com/SorenMaagaard/dotfiles/blob/master/powershell/profile.ps1
 
@@ -242,7 +363,8 @@ function Install-Modules {
         Try {
           info "Checking $($moduleName)"
           $online = Find-Module $moduleName
-        } Catch {
+        }
+        Catch {
           warn "Module $($module.name) was not found in the PSGallery"
           continue
         }
@@ -279,7 +401,8 @@ function Get-EnsureModule {
           info "importing $($moduleName)"
           Import-Module $moduleName -ErrorAction Stop
           success "importing $($moduleName) module"
-        } catch {
+        }
+        catch {
           info "installing $($moduleName) module"
           Install-Module $moduleName `-Force -AllowClobber -SkipPublisherCheck -Scope CurrentUser `
             success "installing $($moduleName) module"
@@ -307,7 +430,8 @@ function Update-Modules {
         info "Checking $($module.name)"
         $online = Find-Module $module.name
         success "Checking $($module.name)"
-      } Catch {
+      }
+      Catch {
         warn "Module $($module.name) was not found in the PSGallery"
       }
       if ($online.version -gt $module.version) {
@@ -324,6 +448,15 @@ function Update-Modules {
   }
 }
 # ─── SYSTEM UTILITY FUNCTIONS ───────────────────────────────────────────────────
+function Remove-CR() {
+  param (
+    [Parameter(Mandatory = $true)][string] $path
+  )
+  $content = ((Get-Content $path) -join "`n") + "`n" 
+  ($content -replace "(?m)^\s*`r`n", '').trim() `
+    -replace "`t", "  " `
+    -replace "^\s\s*", "  " | Set-Content -NoNewline $path
+}
 function Connect-SSH([Parameter(ValueFromRemainingArguments = $true)]$params) { 
   $command = Invoke-Expression -Command 'powershell -NoProfile "Get-Command ssh | Select-Object -ExpandProperty Source"'
   $command += " -o 'StrictHostKeyChecking=no' -o 'UserKnownHostsFile=/dev/null'"
@@ -336,33 +469,41 @@ function Set-SSH-Config {
     [Parameter(Mandatory = $true)][string] $addr
   )
   (Get-Content -Raw $Env:UserProfile\.ssh\config) `
-    -replace ('(?s)\r?\nHost {0}.*?MACs hmac-sha2-512\r?\n' `
+    -replace ('(?s)\r?\nHost {0}.*?MACs hmac-sha2-512\r?\n?' `
       -f $hostname) `
   | Set-Content $Env:UserProfile\.ssh\config ;
   "`nHost {0}
 `tHostName {1}
 `tUser {2}
 `tStrictHostKeyChecking no
-  `tCheckHostIP no
-  `tServerAliveInterval 240
-  `tXAuthLocation /usr/sbin/xauth
-  `tForwardX11 yes
-  `tForwardX11Trusted yes
-  `tUserKnownHostsFile /dev/null
-  `tMACs hmac-sha2-512`n" -f `
+`tCheckHostIP no
+`tServerAliveInterval 240
+`t# XAuthLocation /usr/sbin/xauth
+`t# ForwardX11 yes
+`t# ForwardX11Trusted yes
+`tUserKnownHostsFile /dev/null
+`tMACs hmac-sha2-512`n" -f `
     $hostname, `
     $addr, `
     $user `
   | Out-File -Encoding ascii -Append $Env:UserProfile\.ssh\config ;
-
-  ((Get-Content -Raw $Env:UserProfile\.ssh\config ) `
-      -replace "(?m)^\s*`r`n", '').trim() `
-    -replace "`t", "  " `
-    -replace "^\s\s*", "  " `
-  | Set-Content $Env:UserProfile\.ssh\config ;
+  Remove-CR  $Env:UserProfile\.ssh\config ;
 }
 function Test-Admin {
-  return ([System.Security.Principal.WindowsIdentity]::GetCurrent().UserClaims | ? { $_.Value -eq 'S-1-5-32-544' })
+  $currentPrincipal = New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())
+  return ($currentPrincipal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
+}
+function Get-WhereIsApplication {
+  param (
+    [Parameter(Mandatory = $true)]
+    [String]$Name
+  )
+
+  foreach ($path in $Env:Path.Split(";")) {
+    if ((Test-Path $path)) {
+      Get-ChildItem $path -Filter "$($Name).exe"
+    }
+  }
 }
 Function Get-CoreCount() {
   Get-WmiObject -Class Win32_Processor | Select-Object -ExpandProperty NumberOfLogicalProcessors
@@ -447,7 +588,10 @@ Function Get-WD() {
   Get-Location | Select-Object -ExpandProperty Path
 }
 function Remove-With-Recurse($path) { Remove-Item $path -Recurse -Force }
-
+Function Get-LineCount {
+  Param( [Parameter(ValueFromPipeline)][String[]] $str = "" )
+  Process { $i += 1 } End { return $i }
+}
 # ─── DOCKER ─────────────────────────────────────────────────────────────────────
 function Remove-StoppedContainers {
   & docker container rm $(docker container ls -q)
@@ -549,6 +693,14 @@ function Set-Hyperv-Up {
   End {
     success "Starting VM $($name) ..."
     [string]$addr = Get-Hyperv-VM-IP $name
+    [int]$counter = 5
+    while ($addr.Length -eq 0) {
+      if ($counter -eq 0) {
+        abort "$name network is not ready "
+      }
+      $addr = Get-Hyperv-VM-IP $name
+      $counter -= 1;
+    }
     # [ NOTE ] : we are assuming that the box's username is
     # the same as the host's logged in user
     Set-SSH-Config $name $Env:USERNAME $addr
@@ -596,9 +748,10 @@ function Get-Username {
   param (
     [String]$OS
   )
-  if ($OS -eq "Windows") {
+  if (Is-Windows) {
     $env:USERNAME
-  } else {
+  }
+  else {
     $env:USER
   }
 }
@@ -635,7 +788,8 @@ function RemoveTo-Trash {
     if ($PSBoundParameters.ContainsKey('Path')) {
       $Path | Where-Object { ![string]::IsNullOrWhiteSpace($_) } | Set-Variable Path
       $targets = Convert-Path $Path
-    } else {
+    }
+    else {
       $targets = Convert-Path -LiteralPath $LiteralPath
     }
     $targets | ForEach-Object {
@@ -702,7 +856,6 @@ function Update-VscodeExt() {
   }
 }
 
-
 #
 # ────────────────────────────────────────────────────── I ──────────
 #   :::::: A L I A S E S : :  :   :    :     :        :          :
@@ -731,7 +884,8 @@ function gs { git status -sb }
 if (Is-Windows) {
   function l { Get-ChildItem $args }
   function la { Get-ChildItem -Force $args }
-} else {
+}
+else {
   function l { Get-ChildItem -l $args }
   function la { Get-ChildItem -a $args }
 }
@@ -770,53 +924,73 @@ Set-Alias lsvm Get-VM
 Set-Alias nproc  Get-CoreCount
 Set-Alias hostname  Get-Hostname
 Set-Alias which  Get-Command
+If (-not(Test-Path Alias:whereis)) { Set-Alias -Name "whereis" -Value Get-WhereIsApplication -Option ReadOnly }
 Set-Alias printenv Get-Environment-Variables
 If (Test-Path Alias:cd) { Remove-Item Alias:cd }
 Set-Alias cd Push-Location
 If (Test-Path Alias:pwd) { Remove-Item Alias:pwd }
 Set-Alias pwd Get-WD
-If (Test-Path Alias:cat) { Remove-Item Alias:cat }
-Set-Alias cat Get-Content-Bat
+if (Get-Command bat -ErrorAction SilentlyContinue) {
+  If (Test-Path Alias:cat) { Remove-Item Alias:cat }
+  Set-Alias cat Get-Content-Bat
+}
 If (Test-Path Alias:ssh) { Remove-Item Alias:ssh }
 Set-Alias ssh Connect-SSH
 Set-Alias size Get-Size
 Set-Alias tail Watch-File
 Set-Alias grep Search-Input
 Set-Alias df Get-DriveInfoView
+Set-Alias wcl Get-LineCount
+if (Is-Windows) {
+  If (Test-Path Alias:ls) { Remove-Item Alias:ls }
+  Set-Alias ls Get-ChildItem
+}
+else {
+  Set-Alias ls lsd
+}
 # ─── DOCKER ALIASES ─────────────────────────────────────────────────────────────
-Set-Alias drm  Remove-StoppedContainers
-Set-Alias drmf  Remove-AllContainers
-Set-Alias dip  Get-ContainerIPAddress
-Set-Alias dc  Get-Containers
-Set-Alias di  Get-Images
+if (Get-Command docker -ErrorAction SilentlyContinue) {
+  Set-Alias drm  Remove-StoppedContainers
+  Set-Alias drmf  Remove-AllContainers
+  Set-Alias dip  Get-ContainerIPAddress
+  Set-Alias dc  Get-Containers
+  Set-Alias di  Get-Images
+}
 # ─── UTILITY ────────────────────────────────────────────────────────────────────
 if (Get-Command fzf -ErrorAction SilentlyContinue) {
   Set-Alias __FILTER fzf
 }
-if (Is-Windows) {
-  If (Test-Path Alias:ls) { Remove-Item Alias:ls }
-  Set-Alias ls Get-ChildItem
-} else {
-  Set-Alias ls lsd
-}
 Set-Alias wsldns Set-WSL-DNS
 Set-Alias gna Get-NetAdapter
 Set-Alias rna Restart-NetAdapter
-Set-Alias g git
+if (Get-Command git -ErrorAction SilentlyContinue) {
+  Set-Alias g git
+}
+
 Set-Alias d Remove-With-Recurse
 # ─── READLINE SETTING ───────────────────────────────────────────────────────────
 # https://github.com/yukimemi/dotfiles/blob/main/win/Microsoft.PowerShell_profile.ps1
 Set-PSReadlineKeyHandler -Key Tab -Function Complete
-Set-PSReadlineKeyHandler -Key UpArrow -Function HistorySearchBackward
-Set-PSReadlineKeyHandler -Key DownArrow -Function HistorySearchForward
 Set-PSReadLineKeyHandler -Key 'Ctrl+a' -Function BeginningOfLine
+if ($host.Name -eq "ConsoleHost") {
+  Set-PSReadlineKeyHandler -Key UpArrow -Function HistorySearchBackward
+  Set-PSReadlineKeyHandler -Key DownArrow -Function HistorySearchForward
+}
+
+
 # ─── STARSHIP SETUP ─────────────────────────────────────────────────────────────
 # starship
 if (Get-Command starship -ErrorAction SilentlyContinue) {
   Invoke-Expression (&starship init powershell)
 }
 # ─── ASYNC TASKS ────────────────────────────────────────────────────────────────
-$function_ctx = [scriptblock]::create(@"
+# [ NOTE ] -> only run async tasks out of VSCode shell.
+$async_lock = '{0}\{1}.lock' -f $Env:TMP, (Get-Date -UFormat "%m-%d-%Y")
+if (-not(Test-Path $async_lock)) {
+  
+  if ($Env:TERM_PROGRAM -ne 'vscode') {
+    If (-not (Test-Admin)) {
+      $function_ctx = [scriptblock]::create(@"
   function info {${function:info}}
   function warn {${function:warn}}
   function success {${function:success}}
@@ -825,37 +999,50 @@ $function_ctx = [scriptblock]::create(@"
   function Get-EnsureModule {${function:Get-EnsureModule}}
   function Update-Modules {${function:Update-Modules}}
 "@)
-$null = Start-Job -InitializationScript $function_ctx -Name "async_module_init" -ScriptBlock { $Using:modules | Get-EnsureModule }
-# ────────────────────────────────────────────────────────────────────────────────
-$null = Start-Job -InitializationScript $function_ctx -Name "async_update_modules" { Update-Modules }
-# ────────────────────────────────────────────────────────────────────────────────
-$null = Start-Job -InitializationScript $function_ctx -Name "async_wsl_dns" { Set-WSL-DNS }
-# ────────────────────────────────────────────────────────────────────────────────
-$timer = New-Object System.Timers.Timer
-$timer.Interval = 1000
-$timer.AutoReset = $true
-Get-EventSubscriber -SourceIdentifier "async" -ErrorAction SilentlyContinue | Unregister-Event
-$null = Register-ObjectEvent -InputObject $timer -EventName Elapsed -SourceIdentifier "async" -Action {
-  $jobs = Get-Job -Name "async*"
-  if ($jobs.count -gt 1) {
-    foreach ($job in $jobs) {
-      if ($job.State -ne "Running") {
+      $null = Start-Job -InitializationScript $function_ctx -Name "async_module_init" -ScriptBlock { $Using:modules | Get-EnsureModule }
+      # ────────────────────────────────────────────────────────────────────────────────
+      $null = Start-Job -InitializationScript $function_ctx -Name "async_update_modules" { Update-Modules }
+      # ────────────────────────────────────────────────────────────────────────────────
+      $null = Start-Job -InitializationScript $function_ctx -Name "async_wsl_dns" { Set-WSL-DNS }
+      # ────────────────────────────────────────────────────────────────────────────────
+      $null = Start-Job -InitializationScript $function_ctx -Name "async_scoop_update" { scoop update * }
+      # ────────────────────────────────────────────────────────────────────────────────
+      $null = Start-Job -InitializationScript $function_ctx -Name "async_clean_tmp" {Remove-Item -Force -Recurse -Path ($Env:Tmp+'\*') -ErrorAction SilentlyContinue}
+      # ────────────────────────────────────────────────────────────────────────────────
+      $timer = New-Object System.Timers.Timer
+      $timer.Interval = 1000
+      $timer.AutoReset = $true
+      Get-EventSubscriber -SourceIdentifier "async" -ErrorAction SilentlyContinue | Unregister-Event
+      $null = Register-ObjectEvent -InputObject $timer -EventName Elapsed -SourceIdentifier "async" -Action {
+        $jobs = Get-Job -Name "async*"
+        if ($jobs.count -gt 1) {
+          foreach ($job in $jobs) {
+            if ($job.State -ne "Running") {
+              $Host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates 0 , $host.UI.RawUI.CursorPosition.Y
+              $null = Receive-Job $job.Name
+              $null = Remove-Job $job.Name
+              $null = Unregister-Event $job.Name
+            }
+          }
+          return
+        }
+        [void]$timer.stop()
+        # [ NOTE ] => ensuring cursor position starts at the begining of
+        # the line.
+        $null = Unregister-Event "async"
+        $null = Remove-Job "async"
         $Host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates 0 , $host.UI.RawUI.CursorPosition.Y
-        $null = Receive-Job $job.Name
-        $null = Remove-Job $job.Name
-        $null = Unregister-Event $job.Name
+        success "Asynchronous profile load was completed"
+        Get-ChildItem -Path $Env:USERPROFILE *.lock | ForEach-Object { Remove-Item -Force -Path $_.FullName }
+        New-Item -ItemType file $async_lock
       }
+      info "Asynchronous profile load starting ..."
+      $timer.Start()
     }
-    return
   }
-  [void]$timer.stop()
-  # [ NOTE ] => ensuring cursor position starts at the begining of
-  # the line.
-  $null = Unregister-Event "async"
-  $null = Remove-Job "async"
-  $Host.UI.RawUI.CursorPosition = New-Object System.Management.Automation.Host.Coordinates 0 , $host.UI.RawUI.CursorPosition.Y
-  success "Asynchronous profile load was completed"
 }
-info "Asynchronous profile load starting ..."
-$timer.Start()
 Remove-Variable modules
+# wsl -- freshfetch
+# $color_scripts=@("3","14","15","16","17","9","21",,"22","23","24","27","28","29","30","31","34","36","39","41","42","44","45","46","47","48");
+# wsl -- colorscript -e $(Get-Random -InputObject $color_scripts)
+# https://stackoverflow.com/a/45929412
