@@ -232,7 +232,9 @@ sudo pacman -Sy --noconfirm --needed \
   go \
   perl \
   python \
+  python-pip \
   python2 \
+  python2-pip \
   nodejs \
   ruby \
   yarn
@@ -271,7 +273,6 @@ sudo pacman -Sy --noconfirm --needed \
   terminus-font \
   ttf-font-awesome
 '@ ) ;
-
 Write-Host ('installing common aur packages')
 wsl -d $name -u $Env:USERNAME -- `
     /bin/bash -c (@'
