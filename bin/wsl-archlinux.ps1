@@ -123,6 +123,7 @@ wsl -d $name -u root -- `
     /bin/bash -c (@'
 set -ex;
 pacman-key --init
+sed -i -e '/IgnorePkg\s*=\s*fakeroot/d' /etc/pacman.conf
 [[ $(uname --m) == "aarch64" ]] && pacman-key --populate archlinuxarm || pacman-key --populate archlinux
 pacman -Syyu --noconfirm
 '@ ) ;
@@ -291,8 +292,8 @@ paru --needed --removemake --cleanafter --noconfirm -Sy \
 Write-Host ('setting up dotfiles')
 wsl -d $name -u $Env:USERNAME -- /bin/bash -c (@"
 set -ex;
-git clone https://github.com/da-moon/.dotfiles ~/.dotfiles
-git clone https://github.com/da-moon/SpaceVim.d ~/.SpaceVim.d
+[ ! -d ~/.dotfiles ] && git clone https://github.com/da-moon/.dotfiles ~/.dotfiles
+[ ! -d ~/.SpaceVim.d ] && git clone https://github.com/da-moon/SpaceVim.d ~/.SpaceVim.d
 rcup -f
 "@ ) ;
 # ─── DOCKER ─────────────────────────────────────────────────────────────────────
@@ -325,7 +326,7 @@ rustup component add clippy
 Write-Host ('installing rust cli utilities')
 wsl -d $name -u $Env:USERNAME -- /bin/bash -c (@"
 set -ex;
-. ~/.environment
+. ~/.cargo/env
 rustup run --install stable cargo install --all-features \
   cargo-update \
   subsystemctl \
