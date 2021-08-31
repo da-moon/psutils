@@ -1,5 +1,9 @@
+#Requires -Version 5
+# vim: ft=powershell tabstop=2 shiftwidth=2 softtabstop=2 expandtab
+# Set-ExecutionPolicy Bypass -Scope Process -Force
+# iwr -useb 'https://raw.githubusercontent.com/da-moon/psutils/master/bin/system-init.ps1' | iex
 if (-not(Test-Path -Path (Split-Path -parent $PROFILE.CurrentUserAllHosts) -PathType Container)) {
-  $null = New-Item -ItemType Directory -Path $parent -Force -ErrorAction Stop
+  $null = New-Item -ItemType Directory -Path (Split-Path -parent $PROFILE.CurrentUserAllHosts) -Force -ErrorAction Stop
 }
 if (-not(Test-Path -Path $PROFILE.CurrentUserAllHosts -PathType Leaf)) {
   $uri='https://raw.githubusercontent.com/da-moon/psutils/master/lib/profile.ps1'
