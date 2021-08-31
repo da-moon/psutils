@@ -9,7 +9,7 @@ if (-not(Test-Path -Path $PROFILE.CurrentUserAllHosts -PathType Leaf)) {
   $uri='https://raw.githubusercontent.com/da-moon/psutils/master/lib/profile.ps1'
   Invoke-WebRequest -Uri $uri -OutFile $PROFILE.CurrentUserAllHosts -ErrorAction Stop -Verbose
 }
-if (Get-Command scoop -ErrorAction SilentlyContinue) {
+if (-not(Get-Command scoop -ErrorAction SilentlyContinue)) {
   Set-ExecutionPolicy Bypass -Scope Process -Force
   iwr -useb get.scoop.sh | iex
   scoop install git
