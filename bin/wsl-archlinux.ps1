@@ -1,5 +1,7 @@
 #Requires -Version 5
-# vi: ft=powershell tabstop=2 shiftwidth=2 softtabstop=2 expandtab:
+# vim: ft=powershell tabstop=2 shiftwidth=2 softtabstop=2 expandtab
+# Set-ExecutionPolicy Bypass -Scope Process -Force
+# iwr -useb 'https://raw.githubusercontent.com/da-moon/psutils/master/bin/wsl-archlinux.ps1' | iex
 $name="archlinux"
 # ────────────────────────────────────────────────────────────────────────────────
 [string] $architecture = reg query "HKLM\System\CurrentControlSet\Control\Session Manager\Environment" /v PROCESSOR_ARCHITECTURE | ForEach-Object { ($_ -split "\s+")[3] }
