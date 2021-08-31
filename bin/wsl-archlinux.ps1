@@ -196,6 +196,7 @@ EOF
 Write-Host ('installing core packages')
 wsl -d $name -u $Env:USERNAME -- /bin/bash -c (@'
 set -ex;
+sudo pacman -Rcns --noconfirm fakeroot-tcp || true
 sudo pacman -Sy --noconfirm --needed \
   pacman-contrib \
   expac \
