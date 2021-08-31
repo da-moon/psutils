@@ -63,14 +63,11 @@ scoop install `
   vcredist2017 `
   vcredist2019 `
   vlc `
+  gsudo `
   vscode `
   win32-openssh `
   wire `
   yarn
-
 sudo scoop install `
-  Regular-NF `
-  Regular-NF-Mono `
   Open-Sans `
-  Cascadia-Code `
-  Cascadia-Mono
+  Cascadia-Code
