@@ -328,7 +328,7 @@ Write-Host ('installing rust cli utilities')
 wsl -d $name -u $Env:USERNAME -- /bin/bash -c (@"
 set -ex;
 . ~/.cargo/env
-rustup run --install stable cargo install --all-features \
+rustup run --install stable cargo install -j$(nproc) --all-features \
   cargo-update \
   subsystemctl \
   convco \
@@ -345,9 +345,9 @@ rustup run --install stable cargo install --all-features \
   jen \
   releez \
   procs ;
-rustup run --install stable cargo install --all-features --git https://github.com/ms-jpq/sad
-rustup run --install nightly cargo install --all-features ripgrep nu
-rustup run --install nightly cargo install --all-features --git https://github.com/K4rakara/freshfetch
+rustup run --install stable cargo install -j$(nproc) --all-features --git https://github.com/ms-jpq/sad
+rustup run --install nightly cargo install -j$(nproc) --all-features ripgrep nu
+rustup run --install nightly cargo install -j$(nproc) --all-features --git https://github.com/K4rakara/freshfetch
 rustup default stable-`$(uname -m)-unknown-linux-gnu
 find ~/.cargo/bin/ -type f -exec basename {} \; | sudo xargs -r -I {} sudo ln -sf ~/.cargo/bin/{} /usr/local/bin/{}
 "@ ) ;
